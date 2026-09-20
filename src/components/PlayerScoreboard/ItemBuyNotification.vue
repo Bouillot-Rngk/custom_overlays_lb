@@ -175,7 +175,8 @@ defineProps<{
 .item-icon {
   width: 30px;
   height: 30px;
-  border: var(--brand-border-width) solid color-mix(in oklab, var(--broadcast-accent) 80%, white 20%);
+  border: var(--brand-border-width) solid
+    color-mix(in oklab, var(--broadcast-accent) 80%, white 20%);
   border-radius: var(--radius-sm);
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 0.6),

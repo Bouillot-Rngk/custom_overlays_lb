@@ -33,6 +33,8 @@ const props = defineProps<{
   modelViewport?: string
   /** loading stays transparent; only a terminal failure reveals splash art */
   modelStatus?: HybridChampionModelStatus
+  /** side-column layout: tall card, name at the top, role badge at the foot */
+  vertical?: boolean
 }>()
 
 const client = useClient()
@@ -119,6 +121,7 @@ const stats = computed(() => {
         'model-loading': modelLoading,
         'model-ready': modelReady,
         'model-failed': modelFailed,
+        vertical,
       },
     ]"
     :data-model-viewport="modelViewport"
@@ -156,6 +159,10 @@ const stats = computed(() => {
     <div class="depth-overlay" />
     <div class="scrim" />
     <div class="glow" />
+
+    <div v-if="vertical && slot.champion" class="role-badge">
+      <img class="role-badge-icon" :src="roleIcon" alt="" />
+    </div>
 
     <div class="name" :style="{ '--name-len': nameLen }">
       {{ playerName }}
@@ -491,5 +498,86 @@ const stats = computed(() => {
   letter-spacing: 0.5px;
   color: #ffffff;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+/* --- Side-column variant -------------------------------------------------
+   Same card, rotated brief: it is now tall rather than wide, sits flush in a
+   full-height column, and anchors its text to the inner edge (the one facing
+   the centre of the screen) so both columns read inward. */
+.pick-card.vertical {
+  border-radius: 0;
+  background: rgb(0 0 0 / 0.86);
+  /* The row build sets `height: 100%` because the cards are laid out along the
+     main axis. In a column that would override the flex distribution and make
+     every card full-height, so size comes from flex-basis/grow instead. */
+  height: auto;
+  width: 100%;
+  min-height: 0;
+}
+
+/* The frame artwork behind the scene already draws a team-coloured rule down
+   the inner edge of each column, and the column stops just short of it. Drawing
+   the card's own accent here too produced a six-pixel colour band instead of
+   the single hairline the design calls for. */
+.pick-card.vertical::after {
+  display: none;
+}
+
+/* A tall card crops the centered splash to a near-square window, so framing on
+   the champion's upper body rather than the full figure keeps the face in. */
+.pick-card.vertical .art {
+  object-position: center 28%;
+}
+
+/* Name moves to the head of the card. The scrim follows it (see below), and
+   the container query now measures a much wider box, so the divisor drops. */
+.pick-card.vertical .name {
+  top: 13px;
+  bottom: auto;
+  padding: 0 16px;
+  font-size: clamp(14px, calc(92cqw / var(--name-len, 10)), 27px);
+  letter-spacing: 0.06em;
+}
+
+.pick-card.vertical.team-blue .name {
+  text-align: right;
+}
+
+.pick-card.vertical.team-red .name {
+  text-align: left;
+}
+
+/* Legibility gradient flips to the top, where the name now sits. The bottom of
+   the card keeps the depth overlay's own darkening under the role badge. */
+.pick-card.vertical .scrim {
+  top: 0;
+  bottom: auto;
+  height: 42%;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.88), rgb(0 0 0 / 0));
+}
+
+.role-badge {
+  position: absolute;
+  bottom: 12px;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+}
+
+.pick-card.team-blue .role-badge {
+  right: 14px;
+}
+
+.pick-card.team-red .role-badge {
+  left: 14px;
+}
+
+.role-badge-icon {
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+  /* Same inversion the placeholder icon uses — the SVGs paint with
+     currentColor, which renders black through an <img> tag. */
+  filter: brightness(0) invert(1) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95));
 }
 </style>

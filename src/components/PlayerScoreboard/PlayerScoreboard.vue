@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { playerUpdateEvent } from '@bluebottle_gg/league-broadcast-client'
-import PlayerItems from './PlayerItems.vue'
 import { useIngameSelector } from '@/composables/useIngame'
 import PlayerInfo from './PlayerInfo.vue'
 import GoldDiff from './GoldDiff.vue'
@@ -74,97 +73,84 @@ onUnmounted(() => {
 <template>
   <Transition name="slide-down">
     <div id="player-scoreboard" v-if="scoreboard && tabs">
-      <div class="player-grid">
-        <div v-for="i in 5" :key="i" class="grid-item">
-          <PlayerItems
-            style="grid-area: order-items"
-            :scoreboard-player="scoreboard?.teams[0]?.players[i - 1]"
-            :tab-player="tabs?.['Order']?.players[i - 1]"
-          />
-          <PlayerInfo
-            style="grid-area: order-info"
-            :scoreboard-player="scoreboard?.teams[0]?.players[i - 1]"
-            :tab-player="tabs?.['Order']?.players[i - 1]"
-            :level-up-level="levelUpQueue.getActive('Order', i - 1)?.level"
-            :level-up-visible="levelUpQueue.isVisible('Order', i - 1)"
-            :level-up-exiting="levelUpQueue.isExiting('Order', i - 1)"
-          />
-          <GoldDiff
-            style="grid-area: gold-diff"
-            :order-gold="scoreboard?.teams[0]?.players[i - 1]?.totalGold ?? 0"
-            :chaos-gold="scoreboard?.teams[1]?.players[i - 1]?.totalGold ?? 0"
-          />
-          <PlayerInfo
-            style="grid-area: chaos-info"
-            :scoreboard-player="scoreboard?.teams[1]?.players[i - 1]"
-            :tab-player="tabs?.['Chaos']?.players[i - 1]"
-            mirror
-            :level-up-level="levelUpQueue.getActive('Chaos', i - 1)?.level"
-            :level-up-visible="levelUpQueue.isVisible('Chaos', i - 1)"
-            :level-up-exiting="levelUpQueue.isExiting('Chaos', i - 1)"
-          />
-          <PlayerItems
-            style="grid-area: chaos-items"
-            :scoreboard-player="scoreboard?.teams[1]?.players[i - 1]"
-            :tab-player="tabs?.['Chaos']?.players[i - 1]"
-            mirror
-          />
-          <!-- Single item-buy overlay per side, spanning both items+info columns -->
-          <ItemBuyNotification
-            v-if="itemBuyQueue.getActive('Order', i - 1)"
-            :item-icon="itemBuyQueue.getActive('Order', i - 1)?.itemIcon"
-            :item-name="itemBuyQueue.getActive('Order', i - 1)?.itemName"
-            :visible="itemBuyQueue.isVisible('Order', i - 1)"
-            :exiting="itemBuyQueue.isExiting('Order', i - 1)"
-          />
-          <ItemBuyNotification
-            v-if="itemBuyQueue.getActive('Chaos', i - 1)"
-            :item-icon="itemBuyQueue.getActive('Chaos', i - 1)?.itemIcon"
-            :item-name="itemBuyQueue.getActive('Chaos', i - 1)?.itemName"
-            :visible="itemBuyQueue.isVisible('Chaos', i - 1)"
-            :exiting="itemBuyQueue.isExiting('Chaos', i - 1)"
-            mirror
-          />
-        </div>
+      <div v-for="i in 5" :key="i" class="scoreboard-row">
+        <PlayerInfo
+          :scoreboard-player="scoreboard?.teams[0]?.players[i - 1]"
+          :tab-player="tabs?.['Order']?.players[i - 1]"
+          :level-up-level="levelUpQueue.getActive('Order', i - 1)?.level"
+          :level-up-visible="levelUpQueue.isVisible('Order', i - 1)"
+          :level-up-exiting="levelUpQueue.isExiting('Order', i - 1)"
+        />
+        <GoldDiff
+          :order-gold="scoreboard?.teams[0]?.players[i - 1]?.totalGold ?? 0"
+          :chaos-gold="scoreboard?.teams[1]?.players[i - 1]?.totalGold ?? 0"
+        />
+        <PlayerInfo
+          :scoreboard-player="scoreboard?.teams[1]?.players[i - 1]"
+          :tab-player="tabs?.['Chaos']?.players[i - 1]"
+          mirror
+          :level-up-level="levelUpQueue.getActive('Chaos', i - 1)?.level"
+          :level-up-visible="levelUpQueue.isVisible('Chaos', i - 1)"
+          :level-up-exiting="levelUpQueue.isExiting('Chaos', i - 1)"
+        />
+
+        <!-- One item-buy plate per side, over that side's whole player block. -->
+        <ItemBuyNotification
+          v-if="itemBuyQueue.getActive('Order', i - 1)"
+          class="item-buy-plate"
+          :item-icon="itemBuyQueue.getActive('Order', i - 1)?.itemIcon"
+          :item-name="itemBuyQueue.getActive('Order', i - 1)?.itemName"
+          :visible="itemBuyQueue.isVisible('Order', i - 1)"
+          :exiting="itemBuyQueue.isExiting('Order', i - 1)"
+        />
+        <ItemBuyNotification
+          v-if="itemBuyQueue.getActive('Chaos', i - 1)"
+          class="item-buy-plate"
+          :item-icon="itemBuyQueue.getActive('Chaos', i - 1)?.itemIcon"
+          :item-name="itemBuyQueue.getActive('Chaos', i - 1)?.itemName"
+          :visible="itemBuyQueue.isVisible('Chaos', i - 1)"
+          :exiting="itemBuyQueue.isExiting('Chaos', i - 1)"
+          mirror
+        />
       </div>
     </div>
   </Transition>
 </template>
 
 <style lang="css" scoped>
+/* A replica of LeagueBroadcast's own /ingame/v2 `.player-scoreboard`.
+   v2 sizes this in viewport units (43vw x 23.2vh); the equivalent pixels at
+   the overlay's fixed 1920x1080 canvas are used instead so the board cannot
+   be resized by a browser window that is not exactly the canvas size.
+   Placement (bottom-centre) lives in views/overlay-layout.css. */
 #player-scoreboard {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
-}
-
-.player-grid {
-  background-color: var(--surface-strong);
-  border: var(--brand-border-width) solid var(--border-color);
-  border-bottom: 0px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  display: grid;
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-  grid-template-columns: 1fr;
-}
-
-.player-grid .grid-item {
-  border-bottom: var(--brand-border-width) solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Size deliberately omitted: overlay-layout.css owns placement, and a
+     width/height here ties its specificity and silently wins. */
+  background: var(--lb-surface-strong);
+  border: 1px solid var(--lb-border-strong);
+  /* Flush to the bottom of the frame, so it carries no bottom border. */
+  border-bottom: 0;
+  border-radius: var(--lb-radius-panel) var(--lb-radius-panel) 0 0;
+  box-shadow: 0 -4px 24px rgb(0 0 0 / 0.64);
   overflow: hidden;
-  min-height: 0;
-  position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  grid-template-columns: 215px 250px 1fr 250px 215px;
-  grid-template-areas: 'order-items order-info gold-diff chaos-info chaos-items';
 }
 
-/* Keep the border box identical to every other row — dropping the border
-   outright made the last row 2px taller than the four above it, so its icon,
-   bars and stats were all bigger and sat flush against the screen edge. Keeping
-   it transparent hides the divider while reserving that 2px as bottom margin. */
-.player-grid .grid-item:last-child {
-  border-bottom-color: transparent;
+/* Blue block | gold column | red block, with no gap: the 2px separation the
+   eye reads comes from the gaps inside each player block. */
+.scoreboard-row {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 51.19px minmax(0, 1fr);
+}
+
+/* Covers one side's player block. Two classes so this beats the component's own scoped width, which is still
+   sized to the pre-v2 grid. The mirrored side pins itself to the right. */
+.scoreboard-row .item-buy-plate {
+  width: calc((100% - 51.19px) / 2);
 }
 
 .slide-down-enter-active,

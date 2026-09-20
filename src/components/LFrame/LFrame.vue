@@ -47,24 +47,32 @@ const showInhibitorTimers = computed(() =>
      vertical padding by the same amounts so the patch bar and sponsor logos render unchanged. */
   grid-template-rows: 34px 1fr 104px;
   grid-template-columns: 1fr;
+  /* The panel is flush to the left, top and bottom of the frame, so its inner
+     edge is the only one that meets the game feed and the only one that needs
+     a rule to terminate against it. */
+  border-right: var(--brand-border-width) solid var(--line-soft);
   z-index: 100;
 }
 
+/* The three bands are all black, so hairlines are what separate them. Without
+   these the panel reads as one undifferentiated slab. */
 .lframe-header {
-  background-color: black;
+  background-color: var(--ink-950);
+  border-bottom: var(--brand-border-width) solid var(--line-soft);
 }
 
-/* Solid project-accent surface behind the sponsor rotation. */
+/* Sponsor band. Deliberately the same black as the rest of the panel — the
+   hairline above it is the only separation it needs. */
 .lframe-footer {
-  /* background-color: var(--broadcast-accent); */
-  background-color: black;
+  background-color: var(--ink-950);
+  border-top: var(--brand-border-width) solid var(--line-soft);
 }
 
 #champion-info-cutout {
   position: relative;
   min-height: 0;
   overflow: hidden;
-  background-color: black;
+  background-color: var(--ink-950);
 }
 
 /* Champion detail fills the black window; we render the panel ourselves now,

@@ -10,7 +10,10 @@ import { inject, type InjectionKey } from 'vue'
  */
 export const ClientKey: InjectionKey<LeagueBroadcastClient> = Symbol('lbc')
 
-const DEFAULT_PORT = 58869
+// LeagueBroadcast's own port setting (App.json -> "port") wins over the stock
+// 58869. This machine's app is configured for 60215; override per-URL with
+// ?backendport=<port> if you point a source at a differently configured server.
+const DEFAULT_PORT = 60215
 
 /** Default config — connects to a local LeagueBroadcast server. */
 export const defaultClientConfig: LeagueBroadcastClientConfig = {

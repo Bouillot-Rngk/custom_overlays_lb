@@ -1,21 +1,29 @@
 <script setup lang="ts">
+/**
+ * Top scoreboard — a replica of LeagueBroadcast's own `/ingame/v2`
+ * `.globalScoreboard`. Geometry, colours and type were read off that overlay's
+ * live DOM rather than eyeballed.
+ *
+ * Two stacked bands, 2px apart, the whole assembly centred on the frame and
+ * sized to its own content:
+ *
+ *   topContent     [ team block ] [ 64px centre ] [ team block ]
+ *   bottomContent  [ objectives | game clock | objectives ]
+ *
+ * The centre track is v2's tournament-icon slot. It is kept as a correctly
+ * sized empty box so a tournament/season mark can be dropped in without
+ * moving anything either side of it.
+ */
 import { computed } from 'vue'
 import { useIngameSelector } from '@/composables/useIngame'
 import TeamRow from './TeamRow.vue'
 import TeamObjectiveRow from './TeamObjectiveRow.vue'
 import DragonBuffBanner from './DragonBuffBanner.vue'
-import { GameState } from '@bluebottle_gg/league-broadcast-client'
-import projectLogo from '@/assets/blue_bottle-logo-color-bright_outline.svg?url'
 
 const scoreboard = useIngameSelector((s) => s.gameData.scoreboard)
-const players = useIngameSelector((s) => s.gameData.scoreboardBottom)
-const isMocking = useIngameSelector((s) => (s.gameState as number) === GameState.Mocking)
 
 const blue = computed(() => scoreboard.value?.teams[0])
 const red = computed(() => scoreboard.value?.teams[1])
-
-const bluePlayers = computed(() => players.value?.teams[0]?.players || [])
-const redPlayers = computed(() => players.value?.teams[1]?.players || [])
 
 const gameTime = computed(() => {
   if (!scoreboard.value) return '00:00'
@@ -27,18 +35,19 @@ const gameTime = computed(() => {
 
 <template>
   <Transition name="scoreboard" :duration="{ enter: 850, leave: 750 }">
-    <div v-if="scoreboard && blue && red" class="scoreboard">
+    <div v-if="scoreboard && blue && red" class="global-scoreboard">
       <div class="row-clip">
-        <div class="top-row">
+        <div class="top-content">
           <TeamRow
-            style="grid-column: 1"
+            class="team-block team-block-left"
             :team="blue"
             :best-of="scoreboard.bestOf"
             :enemy-team-gold="red.gold"
           />
-          <img :src="projectLogo" class="center-logo" alt="BlueBottle" />
+          <!-- v2's tournament-icon slot; empty until a mark is configured. -->
+          <div class="tournament-icon" />
           <TeamRow
-            style="grid-column: 3"
+            class="team-block team-block-right"
             :team="red"
             :best-of="scoreboard.bestOf"
             :enemy-team-gold="blue.gold"
@@ -46,47 +55,72 @@ const gameTime = computed(() => {
           />
         </div>
       </div>
+
       <div class="row-clip">
-        <div class="bottom-row">
-          <TeamObjectiveRow :team="blue" :players="bluePlayers" :is-mocking="isMocking" />
-          <p class="game-time">{{ gameTime }}</p>
-          <TeamObjectiveRow :team="red" :players="redPlayers" mirror :is-mocking="isMocking" />
+        <div class="bottom-content">
+          <TeamObjectiveRow :team="blue" />
+          <div class="game-timer">
+            <p class="game-timer-text">{{ gameTime }}</p>
+          </div>
+          <TeamObjectiveRow :team="red" mirror />
         </div>
       </div>
-      <DragonBuffBanner />
+
+      <DragonBuffBanner class="dragon-banner" />
     </div>
   </Transition>
 </template>
 
 <style scoped>
-.scoreboard {
-  /* The display font runs wider than the old condensed font — the bar gets
-     80px extra so team names keep room next to the fixed stat columns */
-  width: 880px;
+.global-scoreboard {
+  /* Every figure on the bar is white; team identity is carried by the flank
+     edges, the series bars and the advantage chips instead. One knob, so the
+     whole bar moves together. */
+  --sb-text: #fff;
+
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 2px;
+  width: fit-content;
+  background: transparent;
 }
 
-.row-clip {
+/* Hung below the two bands rather than stacked as a third flex child: its
+   wrapper is always in the DOM even when no soul is active, so in the column
+   it would spend the whole game contributing an extra 2px gap and push the
+   assembly off v2's 98px. */
+.dragon-banner {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* The clip exists only so the rows can slide in from behind the frame edge.
+   Left on permanently it would also crop the bands' drop shadows, so it is
+   applied for the duration of the transition and not otherwise. */
+.scoreboard-enter-active .row-clip,
+.scoreboard-leave-active .row-clip {
   overflow: hidden;
 }
 
 /* Enter: top row first, bottom row waits for top to finish */
-.scoreboard-enter-active .top-row {
+.scoreboard-enter-active .top-content {
   animation: row-slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
-.scoreboard-enter-active .bottom-row {
+.scoreboard-enter-active .bottom-content {
   animation: row-slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s both;
 }
 
 /* Exit: bottom row first, top row waits for bottom to finish */
-.scoreboard-leave-active .top-row {
+.scoreboard-leave-active .top-content {
   animation: row-slide-out 0.35s cubic-bezier(0.55, 0, 0.75, 0.06) 0.35s both;
 }
 
-.scoreboard-leave-active .bottom-row {
+.scoreboard-leave-active .bottom-content {
   animation: row-slide-out 0.35s cubic-bezier(0.55, 0, 0.75, 0.06) both;
 }
 
@@ -110,62 +144,65 @@ const gameTime = computed(() => {
   }
 }
 
-.top-row {
-  height: 64px;
-  background-color: var(--surface-strong);
-  border-radius: var(--radius-lg);
-  border: var(--brand-border-width) solid var(--border-color);
-  box-sizing: border-box;
-  overflow: hidden;
+/* Equal flanking tracks either side of a fixed centre. Because the tracks are
+   `1fr` inside a content-sized box they both take the width of the WIDER team
+   block, which is what keeps the 64px centre slot on the frame's midline even
+   when one side's name or gold figure runs longer. */
+.top-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+  grid-template-columns: 1fr 64px 1fr;
   grid-template-rows: 64px;
+  align-items: start;
 }
 
-.team-row {
+/* Each block is pushed against the centre slot, so the two always meet it no
+   matter how much slack its track has. */
+.team-block-left {
+  justify-self: end;
+}
+
+.team-block-right {
+  justify-self: start;
+}
+
+.tournament-icon {
+  height: 100%;
+  background: var(--lb-surface-base);
+  border-radius: var(--lb-radius-tile);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.44);
+}
+
+.bottom-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
-  padding: 0 12px;
-  color: #fff;
-}
-
-.team-row.team-blue {
-  background-color: rgba(37, 99, 235, 0.8);
-  grid-column: 1;
-}
-
-.team-row.team-red {
-  background-color: rgba(220, 38, 38, 0.8);
-  grid-column: 3;
-}
-
-.center-logo {
-  width: 28px;
-  height: 28px;
-  justify-self: center;
-  align-self: center;
-  grid-column: 2;
-}
-
-.bottom-row {
+  align-items: center;
   height: 32px;
-  background-color: var(--surface-soft);
-  border-radius: var(--radius-lg);
-  box-sizing: border-box;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
-  grid-template-rows: 32px;
+  /* v2 grades this band darker than the team blocks above it, so it reads as
+     a subtitle to the bar rather than a second panel of equal weight. */
+  background: linear-gradient(180deg, var(--lb-surface-glass) 0%, var(--lb-surface-scrim) 100%);
+  border: 1px solid var(--lb-border-subtle);
+  border-radius: var(--lb-radius-tile);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.44);
 }
 
-.game-time {
+.game-timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 100%;
+}
+
+/* The clock is this scene's one hero number, so it takes the feature face —
+   the same role the countdown plays on the draft bar. */
+.game-timer-text {
   margin: 0;
-  line-height: 1;
-  color: #fff;
-  font-size: 24px;
-  font-weight: 800;
-  justify-self: center;
-  align-self: center;
+  font-family: var(--brand-font-feature);
+  font-size: 27px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--sb-text);
+  text-align: center;
 }
 </style>

@@ -13,9 +13,11 @@
   height: 1080px;
 }
 
+/* Top scoreboard: /ingame/v2 hangs it from y 0, centred, and lets it size to
+   its own content rather than pinning a width. */
 #app .overlay-scoreboard {
   position: absolute;
-  top: 10px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -28,12 +30,16 @@
   height: 260px;
 }
 
+/* Bottom scoreboard: v2 sizes its board 43vw x 23.2vh and centres it on the
+   bottom edge. Those are written out against the fixed 1920x1080 canvas so a
+   dev window of another size cannot rescale it. */
 #app .overlay-playerscoreboard {
   position: absolute;
   bottom: 0px;
-  left: calc(285px + 176px);
-  right: calc(285px + 176px);
-  height: 260px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 825.6px;
+  height: 250.56px;
 }
 
 /* Graph-only Gold Graph variant occupying precisely the player-scoreboard slot. */
@@ -53,16 +59,48 @@
   height: 260px;
 }
 
+/* Spawn timers hang off the top corners of the frame, flush to both edges,
+   as they do on /ingame/v2. The element itself is a zero-height rail; each
+   timer pins itself to its own corner. */
 #app .overlay-objective-timers {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0;
 }
 
 #app .overlay-side-info {
   position: absolute;
   top: 154px;
   left: 0px;
+}
+
+/* Side player tabs: each team's live state pinned to its own screen edge,
+   below the objective timers and clear of the bottom scoreboard's 260px. */
+#app .overlay-player-tabs {
+  position: absolute;
+
+  /* Read off LeagueBroadcast's own /ingame/v2: the stacks sit at y 128, are
+     72px wide and run 462px tall (5 tabs, 8px apart).
+
+     --tab-scale is the single knob that resizes the whole stack. It lives here,
+     next to the width it has to agree with, and the tab components derive every
+     dimension from it — so the v2 base numbers stay literal at each use site and
+     the replica can still be diffed against that overlay. At 1.2 the column is
+     86.4px wide and 554.4px tall, running y 128-682. */
+  --tab-scale: 1.2;
+
+  top: 128px;
+  width: calc(72px * var(--tab-scale));
+}
+
+#app .overlay-player-tabs-blue {
+  left: 0;
+}
+
+#app .overlay-player-tabs-red {
+  right: 0;
 }
 
 #app .overlay-minimap {

@@ -37,10 +37,12 @@ const cacheUrl = (path?: string) => client.getCacheUrl(path)
 </template>
 
 <style scoped>
+/* Slot size is set by whoever places the row (`--ban-size`), so the bottom
+   strip and the broadcast ban deck can share one component at two scales. */
 .ban-row {
   display: flex;
   gap: 6px;
-  height: 48px;
+  height: var(--ban-size, 48px);
 }
 .team-red {
   flex-direction: row-reverse;
@@ -48,8 +50,8 @@ const cacheUrl = (path?: string) => client.getCacheUrl(path)
 
 .ban-slot {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: var(--ban-size, 48px);
+  height: var(--ban-size, 48px);
   border-radius: 3px;
   overflow: hidden;
   background: rgb(0 0 0 / 0.7);

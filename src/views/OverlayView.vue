@@ -1,21 +1,22 @@
 <script setup lang="ts">
+// Free-tier overlay: only the components LeagueBroadcast's free tier feeds with
+// data (Scoreboard, Player Tabs, Player Scoreboard, Objective Timers, Minimap
+// Frame). The L-Frame — the bottom-left panel carrying the rotating
+// event/match/patch bar, the champion-detail cutout and the sponsor band — was
+// dropped at the user's request; it is still mounted on its own preview page at
+// /ingame/element/lframe, so restoring it here is an import plus a tag.
+// The side Player Tabs carry each player's live state — name,
+// level, spells, ultimate and vitals — which the bottom scoreboard used to
+// squeeze in alongside items and KDA. The Basic-tier components (gold graph, kill feed, skin /
+// rune display, smite reaction, teamfights, player cameras, announcer,
+// power play, side info) are kept in the repo under src/components/ — restore
+// their import + tag here after upgrading the tier.
+import { Team } from '@bluebottle_gg/league-broadcast-client'
 import Scoreboard from '@/components/Scoreboard/Scoreboard.vue'
-import GoldGraph from '@/components/GoldGraph/GoldGraph.vue'
+import PlayerTabs from '@/components/PlayerTabs/PlayerTabs.vue'
 import PlayerScoreboard from '@/components/PlayerScoreboard/PlayerScoreboard.vue'
 import ObjectiveTimers from '@/components/ObjectiveTimer/ObjectiveTimers.vue'
 import MinimapFrame from '@/components/Minimap/MinimapFrame.vue'
-import LFrame from '@/components/LFrame/LFrame.vue'
-import SkinDisplay from '@/components/SidePanel/SkinDisplay.vue'
-import RuneDisplay from '@/components/SidePanel/RuneDisplay.vue'
-import SideInfoPage from '@/components/SideInfoPage/SideInfoPage.vue'
-import { Team } from '@bluebottle_gg/league-broadcast-client'
-import CompactTeamfight from '@/components/Teamfight/CompactTeamfight.vue'
-import TeamfightPanels from '@/components/Teamfight/TeamfightPanels.vue'
-import SmiteReaction from '@/components/SmiteReaction/SmiteReaction.vue'
-import PlayerCameras from '@/components/PlayerCameras/PlayerCameras.vue'
-import KillFeed from '@/components/KillFeed/KillFeed.vue'
-import ObjectivePowerPlayContainer from '@/components/ObjectivePowerPlay/ObjectivePowerPlayContainer.vue'
-import Announcer from '@/components/Announcer/Announcer.vue'
 import DebugBackground from '@/components/Debug/DebugBackground.vue'
 
 withDefaults(
@@ -32,26 +33,11 @@ withDefaults(
 <template>
   <div class="overlay">
     <DebugBackground v-if="showDebugBackground" />
-    <!-- Core features available in all tiers -->
     <Scoreboard class="overlay-scoreboard" />
+    <PlayerTabs class="overlay-player-tabs overlay-player-tabs-blue" :team="Team.Order" />
+    <PlayerTabs class="overlay-player-tabs overlay-player-tabs-red" :team="Team.Chaos" mirror />
     <PlayerScoreboard class="overlay-playerscoreboard" />
     <ObjectiveTimers class="overlay-objective-timers" />
-    <SideInfoPage class="overlay-side-info" />
     <MinimapFrame class="overlay-minimap" />
-    <LFrame class="overlay-lframe" />
-    <ObjectivePowerPlayContainer />
-
-    <!-- Basic Tier only features -->
-    <SkinDisplay class="overlay-skindisplay" :team="Team.Order" />
-    <SkinDisplay class="overlay-skindisplay" :team="Team.Chaos" mirror />
-    <RuneDisplay class="overlay-skindisplay" :team="Team.Order" />
-    <RuneDisplay class="overlay-skindisplay" :team="Team.Chaos" mirror />
-    <SmiteReaction class="overlay-smitereaction" />
-    <KillFeed class="overlay-killfeed" />
-    <Announcer class="overlay-announcer" />
-    <!-- <PlayerCameras class="overlay-playercameras" /> -->
-    <GoldGraph class="overlay-player-scoreboard-gold-graph" variant="player-scoreboard" />
-    <CompactTeamfight class="overlay-teamfight" />
-    <TeamfightPanels class="overlay-teamfight-panels" />
   </div>
 </template>

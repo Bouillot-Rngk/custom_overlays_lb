@@ -1,6 +1,15 @@
 <script setup lang="ts">
+/**
+ * The gold column between the two halves of a scoreboard row — a replica of
+ * LeagueBroadcast's own `/ingame/v2` `.gold-comparison`.
+ *
+ * v2 marks the leading side twice: a 2px bottom edge across the whole cell and
+ * a small caret at that side's edge pointing in at the number. Both take the
+ * leading team's colour. v2 reads that colour from the operator's configured
+ * side colours; this overlay uses its own team tokens instead, so the cue
+ * matches the rest of the UP & DOWN chrome.
+ */
 import { computed } from 'vue'
-import FadeTransition from '../../transitions/FadeTransition.vue'
 
 const props = defineProps<{
   orderGold: number
@@ -11,97 +20,79 @@ const diff = computed(() => props.orderGold - props.chaosGold)
 
 const formattedDiff = computed(() => {
   const d = Math.abs(diff.value)
-  if (d >= 1000) return (d / 1000).toFixed(1) + 'K'
+  if (d >= 1000) return (d / 1000).toFixed(1) + 'k'
   return Math.floor(d).toString()
 })
+
+/**
+ * Below this many gold, v2 calls the row level: the marker still points at the
+ * side that is ahead, but it and the cell's edge go neutral grey rather than
+ * team colour. v2 reads this from the active style set (`goldComparison.
+ * neutralThreshold`), where the operator's current set has it at 400.
+ */
+const NEUTRAL_THRESHOLD = 400
 
 const leadingTeam = computed(() => {
   if (diff.value > 0) return 'order'
   if (diff.value < 0) return 'chaos'
   return null
 })
+
+const leadColor = computed(() => {
+  if (Math.abs(diff.value) < NEUTRAL_THRESHOLD) return 'var(--lb-neutral)'
+  if (leadingTeam.value === 'order') return 'var(--blue-team-color)'
+  if (leadingTeam.value === 'chaos') return 'var(--red-team-color)'
+  return 'transparent'
+})
 </script>
 
 <template>
-  <div class="gold-diff">
-    <!-- Order (blue) indicator: bracket pointing left -->
-    <FadeTransition>
-      <svg
-        v-if="leadingTeam === 'order'"
-        class="indicator indicator-order"
-        viewBox="-0.5 -0.5 10 30.5"
-        xmlns="http://www.w3.org/2000/svg"
-        width="100%"
-        height="100%"
-        preserveAspectRatio="none"
-      >
-        <polygon
-          points="8,0 4,0 4,10 0,15 4,20 4,30 8,30, 8,0"
-          fill="var(--blue-team-color)"
-          stroke="rgba(0,0,0,1)"
-          stroke-width="1"
-          stroke-linejoin="miter"
-        />
-      </svg>
-    </FadeTransition>
-
+  <div class="gold-comparison" :style="{ '--lead-color': leadColor }">
+    <span v-if="leadingTeam === 'order'" class="lead-marker" />
     <span class="gold-value">{{ formattedDiff }}</span>
-    <!-- Chaos (red) indicator: bracket pointing right -->
-    <FadeTransition>
-      <svg
-        v-if="leadingTeam === 'chaos'"
-        class="indicator indicator-chaos"
-        viewBox="-0.5 -0.5 10 30.5"
-        xmlns="http://www.w3.org/2000/svg"
-        width="100%"
-        height="100%"
-        preserveAspectRatio="none"
-      >
-        <polygon
-          points="0,0 4,0 4,10 8,15 4,20 4,30 0,30 0,0"
-          fill="var(--red-team-color)"
-          stroke="rgba(0,0,0,1)"
-          stroke-width="1"
-          stroke-linejoin="miter"
-        />
-      </svg>
-    </FadeTransition>
+    <span v-if="leadingTeam === 'chaos'" class="lead-marker right" />
   </div>
 </template>
 
-<style lang="css" scoped>
-.gold-diff {
+<style scoped>
+.gold-comparison {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-left: var(--brand-border-width) solid var(--border-color);
-  border-right: var(--brand-border-width) solid var(--border-color);
-  overflow: visible;
-  /* Add subtle drop shadow for better visibility */
-  text-shadow: 0 0 2px rgba(0, 0, 0, 1);
+  height: 100%;
+  background: var(--lb-surface-base);
+  border-bottom: 2px solid var(--lead-color);
+  overflow: hidden;
 }
 
 .gold-value {
+  font-family: var(--lb-font-global);
+  font-size: 13.12px;
+  line-height: 1;
   font-weight: 800;
-  font-size: 20px;
-  line-height: 20px;
-  color: white;
-  z-index: 1;
+  text-align: center;
+  color: var(--lb-text-primary);
 }
 
-.indicator {
+/* Zero-size box whose one coloured border collapses into a triangle. Both
+   sides point inward at the figure, as they do in v2. */
+.lead-marker {
   position: absolute;
-  width: 10px;
-  height: 48px;
-  z-index: 2;
+  top: 40%;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
 }
 
-.indicator-order {
-  left: -3px;
+.lead-marker:not(.right) {
+  left: 0;
+  border-left: 4px solid var(--lead-color);
 }
 
-.indicator-chaos {
-  right: -3px;
+.lead-marker.right {
+  right: 0;
+  border-right: 4px solid var(--lead-color);
 }
 </style>

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import {
-  type ingameScoreboardTeamData,
-  type ingameScoreboardBottomPlayerData,
-  getRoleQuest,
-} from '@bluebottle_gg/league-broadcast-client'
-import TopIcon from '@/assets/lane/top-placeholder-cropped.svg'
-import JungleIcon from '@/assets/lane/jgl-placeholder-cropped.svg'
-import MidIcon from '@/assets/lane/mid-placeholder-cropped.svg'
-import BotIcon from '@/assets/lane/bot-placeholder-cropped.svg'
-import SupportIcon from '@/assets/lane/sup-placeholder-cropped.svg'
-import TextWithIcon from './TextWithIcon.vue'
+/**
+ * One team's half of the scoreboard's objective band — a replica of
+ * `/ingame/v2`'s `bottomContent-leftTeam` / `-rightTeam`:
+ *
+ *   [ dragons | plates | grubs ]  (game clock)  [ grubs | plates | dragons ]
+ *
+ * Counts sit outboard of their own icon on each side, so both halves read
+ * outward from the clock.
+ */
+import { type ingameScoreboardTeamData } from '@bluebottle_gg/league-broadcast-client'
 import Grubs from '@/assets/grubs.png'
+import TowerPlate from '@/assets/towerPlate.png'
 import Fire from '@/assets/dragon/fire.png'
 import Air from '@/assets/dragon/air.png'
 import Chemtech from '@/assets/dragon/chemtech.png'
@@ -23,184 +23,100 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   team: ingameScoreboardTeamData
-  players: ingameScoreboardBottomPlayerData[]
   mirror?: boolean
-  isMocking?: boolean
 }>()
 
-function isQuestItem(item: { id: number }) {
-  if (!item) {
-    return false
-  }
-
-  if (item.id >= 1090 && item.id <= 1095) {
-    return true
-  }
-
-  if (item.id >= 1200 && item.id <= 1250) {
-    return true
-  }
-
-  return false
+const DRAGON_ICONS: Record<string, string> = {
+  fire: Fire,
+  air: Air,
+  chemtech: Chemtech,
+  hextech: Hextech,
+  earth: Earth,
+  water: Water,
+  elder: Elder,
 }
 
-function playerHasQuestComplete(player: ingameScoreboardBottomPlayerData) {
-  if (props.isMocking) {
-    return player.respawnAt
-  }
-  const roleItem = getRoleQuest(player)
-  if (!roleItem || !isQuestItem(roleItem)) {
-    return true
-  }
-  if (!roleItem.stats || roleItem.stats.length < 2) {
-    return false
-  }
-  if (roleItem.id === 1220 || roleItem.id === 1206) {
-    return true
-  }
-  const current = roleItem.stats[0] ?? 0
-  const max = roleItem.stats[1] ?? 1
-  return current >= max
-}
-
-function allQuestsComplete() {
-  return props.players.every(playerHasQuestComplete)
-}
-const roleIcons = [TopIcon, JungleIcon, MidIcon, BotIcon, SupportIcon]
-
-// Elder respawns, so a team can stack an unbounded number of them. Collapse
-// all elder kills into one icon with a count so the row can't overflow into
-// the quest icons; elementals are capped at 4 and stay individual.
-const dragonDisplay = computed(() => {
-  const entries: { type: string; count: number }[] = []
-  for (const dragon of props.team.dragons) {
-    const isElder = dragon.toLowerCase() === 'elder'
-    const existing = isElder ? entries.find((e) => e.type.toLowerCase() === 'elder') : undefined
-    if (existing) {
-      existing.count++
-    } else {
-      entries.push({ type: dragon, count: 1 })
-    }
-  }
-  return entries
-})
-
-function getDragonIcon(dragonType: string) {
-  switch (dragonType.toLowerCase()) {
-    case 'fire':
-      return Fire
-    case 'air':
-      return Air
-    case 'chemtech':
-      return Chemtech
-    case 'hextech':
-      return Hextech
-    case 'earth':
-      return Earth
-    case 'water':
-      return Water
-    case 'elder':
-      return Elder
-    default:
-      return undefined
-  }
-}
+const dragons = computed(() =>
+  (props.team.dragons ?? [])
+    .map((d) => DRAGON_ICONS[String(d).toLowerCase()])
+    .filter((icon): icon is string => Boolean(icon)),
+)
 </script>
 
 <template>
-  <div class="flex items-center h-full" :class="mirror ? 'flex-row-reverse' : 'flex-row'">
-    <TransitionGroup
-      name="stagger-fade"
-      tag="div"
-      appear
-      class="flex flex-row h-full items-center gap-2 w-43"
-      :class="mirror ? 'justify-end' : 'justify-start'"
-      id="quest-container"
-      :style="{
-        'padding-left': mirror ? 'auto' : '8px',
-        'padding-right': mirror ? '8px' : 'auto',
-      }"
-    >
-      <div
-        v-for="(player, i) in players"
-        v-if="!allQuestsComplete()"
-        :key="i"
-        class="flex items-center justify-center gap-1 rounded-full p-1 w-6 h-6 border"
-        :style="{
-          borderColor: playerHasQuestComplete(player)
-            ? mirror
-              ? 'var(--red-team-color)'
-              : 'var(--blue-team-color)'
-            : '#ffffff55',
-          backgroundColor: playerHasQuestComplete(player)
-            ? `color-mix(in srgb, ${mirror ? 'var(--red-team-color)' : 'var(--blue-team-color)'} 10%, transparent)`
-            : '#00000066',
-          color: playerHasQuestComplete(player)
-            ? mirror
-              ? 'var(--red-team-color)'
-              : 'var(--blue-team-color)'
-            : '#ffffff',
-          '--i': mirror ? players.length - 1 - i : i,
-        }"
-      >
-        <component :is="roleIcons[i]" class="w-4 h-4" />
-      </div>
-    </TransitionGroup>
-
-    <TextWithIcon
-      :icon-url="Grubs"
-      :text="props.team.grubs.toString()"
-      :mirror="mirror"
-      text-width="1.5ch"
-      :class="mirror ? ['pr-2'] : ['pl-2']"
+  <div class="objective-row" :class="{ mirror }">
+    <img
+      class="objective-icon"
+      :src="Grubs"
+      alt=""
+      @error="handleImageError"
+      @load="handleImageLoad"
     />
+    <p class="objective-text">{{ team.grubs }}</p>
 
-    <TransitionGroup
-      name="stagger-fade"
-      tag="div"
-      appear
-      class="flex flex-row justify-start h-full grow items-center gap-2 mx-4"
-      :class="mirror ? 'flex-row' : 'flex-row-reverse'"
-    >
-      <!--
-        The row flows outward from the clock, so the count sits on the outer
-        side of its icon (away from the neighboring dragons) with a tight gap
-        to make clear which icon it multiplies.
-      -->
-      <div
-        v-for="(dragon, i) in dragonDisplay"
-        :key="i"
-        class="flex items-center gap-0.5"
-        :class="mirror ? 'flex-row' : 'flex-row-reverse'"
-      >
-        <img
-          :src="getDragonIcon(dragon.type)"
-          alt="Dragon icon"
-          class="h-5 w-auto"
-          @error="handleImageError"
-          @load="handleImageLoad"
-        />
-        <span v-if="dragon.count > 1" class="text-base font-bold">{{ dragon.count }}x</span>
-      </div>
-    </TransitionGroup>
+    <img
+      class="objective-icon plate-icon"
+      :src="TowerPlate"
+      alt=""
+      @error="handleImageError"
+      @load="handleImageLoad"
+    />
+    <p class="objective-text">{{ team.towerPlates }}</p>
+
+    <img
+      v-for="(icon, i) in dragons"
+      :key="i"
+      class="objective-icon dragon-icon"
+      :src="icon"
+      alt=""
+      @error="handleImageError"
+      @load="handleImageLoad"
+    />
   </div>
 </template>
 
-<style lang="css" scoped>
-.stagger-fade-enter-active,
-.stagger-fade-leave-active {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
+<style scoped>
+/* Blue reads right-to-left off the clock, red left-to-right. */
+.objective-row {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  height: 32px;
+  margin-right: 16px;
+  /* Both halves take the same width, so the clock stays on the band's midline
+     however many dragons one side has taken. */
+  width: 100%;
 }
 
-.stagger-fade-enter-active {
-  transition-delay: calc(700ms + var(--i) * 120ms);
+.objective-row.mirror {
+  flex-direction: row;
+  margin-right: 0;
+  margin-left: 16px;
 }
 
-.stagger-fade-enter-from,
-.stagger-fade-leave-to {
-  opacity: 0;
-  transform: translateY(6px);
+/* Height-driven so each mark keeps its own aspect ratio — the plate art is
+   noticeably taller than it is wide. */
+.objective-icon {
+  width: auto;
+  height: 100%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.dragon-icon {
+  object-fit: contain;
+}
+
+.objective-text {
+  margin: 0;
+  font-family: var(--brand-font-body);
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--sb-text, #fff);
+  text-align: center;
 }
 </style>

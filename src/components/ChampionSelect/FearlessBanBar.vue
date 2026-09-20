@@ -12,42 +12,50 @@ const props = defineProps<{
 const client = useClient()
 const cacheUrl = (path?: string) => client.getCacheUrl(path)
 
-interface GameGroup {
-  game: number // 1-based sequential label
-  champs: simpleChampionData[]
-}
-
 // backend keys are 0-based (and possibly sparse); label sequentially by sorted
 // key order as G1, G2, G3… regardless of the raw key values.
-function toGroups(fb?: { [key: number]: simpleChampionData[] }): GameGroup[] {
+function toGameList(fb?: { [key: number]: simpleChampionData[] }): simpleChampionData[][] {
   if (!fb) return []
   return Object.keys(fb)
     .map(Number)
     .sort((a, b) => a - b)
-    .map((key) => ({ champs: fb[key] ?? [] }))
-    .filter((g) => g.champs.length > 0)
-    .map((g, i) => ({ game: i + 1, champs: g.champs }))
+    .map((key) => fb[key] ?? [])
+    .filter((champs) => champs.length > 0)
 }
 
-const blueGroups = computed(() => toGroups(props.blueTeam.fearlessBans))
-const redGroups = computed(() => toGroups(props.redTeam.fearlessBans))
+/**
+ * One column per game already played, blue's bans stacked over red's. Grouping
+ * by game (rather than by team, as this bar used to) is how a caster reads it:
+ * "what was taken in game 2" is the question, not "what has blue taken overall".
+ * Stacking also halves the bar's width, so it no longer spans the whole frame.
+ */
+const gameGroups = computed(() => {
+  const blue = toGameList(props.blueTeam.fearlessBans)
+  const red = toGameList(props.redTeam.fearlessBans)
+  const count = Math.max(blue.length, red.length)
+  return Array.from({ length: count }, (_, i) => ({
+    game: i + 1,
+    blue: blue[i] ?? [],
+    red: red[i] ?? [],
+  }))
+})
 
-const hasData = computed(() => blueGroups.value.length > 0 || redGroups.value.length > 0)
+const hasData = computed(() => gameGroups.value.length > 0)
 
-// fearless drafts accumulate at most 4 prior games per team; at 4 games the
-// icons drop to 30px so both sides stay on a single row within 1920px
-const maxGroups = computed(() => Math.max(blueGroups.value.length, redGroups.value.length))
-const iconSize = computed(() => (maxGroups.value <= 3 ? 36 : 30))
+// A fearless series reaches at most 4 prior games. Stacked, even four groups
+// of five fit the centre column at full size; only beyond that does it tighten.
+// Whoever places the bar can override this with a --fear-icon custom property.
+const iconSize = computed(() => (gameGroups.value.length <= 4 ? 34 : 28))
 </script>
 
 <template>
-  <div v-if="hasData" class="fearless-bar" :style="{ '--fear-icon': `${iconSize}px` }">
-    <div class="side blue">
-      <div v-for="(grp, gi) in blueGroups" :key="`blue-g-${gi}`" class="game-group">
-        <span class="game-label">G{{ grp.game }}</span>
+  <div v-if="hasData" class="fearless-bar" :style="{ '--fear-icon-auto': `${iconSize}px` }">
+    <div v-for="(grp, gi) in gameGroups" :key="`g-${grp.game}`" class="game-group">
+      <span class="game-label">G{{ grp.game }}</span>
+      <div class="game-rows">
         <TransitionGroup name="fear" tag="div" class="icons">
           <div
-            v-for="(c, i) in grp.champs"
+            v-for="(c, i) in grp.blue"
             :key="`blue-${gi}-${i}`"
             class="fear-icon blue"
             :style="{ '--g': gi, '--c': i }"
@@ -61,17 +69,9 @@ const iconSize = computed(() => (maxGroups.value <= 3 ? 36 : 30))
             <span class="strike" />
           </div>
         </TransitionGroup>
-      </div>
-    </div>
-
-    <div class="center-divider" />
-
-    <div class="side red">
-      <div v-for="(grp, gi) in redGroups" :key="`red-g-${gi}`" class="game-group">
-        <span class="game-label">G{{ grp.game }}</span>
         <TransitionGroup name="fear" tag="div" class="icons">
           <div
-            v-for="(c, i) in grp.champs"
+            v-for="(c, i) in grp.red"
             :key="`red-${gi}-${i}`"
             class="fear-icon red"
             :style="{ '--g': gi, '--c': i }"
@@ -91,55 +91,40 @@ const iconSize = computed(() => (maxGroups.value <= 3 ? 36 : 30))
 </template>
 
 <style scoped>
-/* edge-to-edge strip at the very top of the scene; the game groups stay
-   centered inside it */
+/* Self-contained block that shrinks to its content, rather than the
+   edge-to-edge strip this used to be — whoever places it decides where it
+   sits, and it no longer claims the full width of the frame. The bar itself is
+   just the row; the surface belongs to each game (see below). */
 .fearless-bar {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  gap: 16px;
-  min-height: 52px;
-  width: 100%;
-  padding: 5px 20px;
-  background: linear-gradient(to bottom, rgb(0 0 0 / 0.94), rgb(0 0 0 / 0.78));
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+  gap: var(--fear-gap, 16px);
 }
 
-.side {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.side.blue {
-  justify-content: flex-end;
-}
-
-/* hairline separators BETWEEN a side's game groups only: blue puts them on the
-   right of every group but the last, red mirrors with left borders on every
-   group but the first (so no stray line ends up beside the center divider) */
+/* One past game: its label beside the two stacked team rows, on a panel of its
+   own. Panel-per-game rather than one long bar — the gap between them does the
+   dividing, so no hairline is needed and each game reads as a discrete unit. */
 .game-group {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-  border-right: 1px solid rgb(255 255 255 / 0.12);
+  gap: 8px;
+  padding: var(--fear-pad, 8px 12px);
+  background: var(--fear-surface, rgb(0 0 0 / 0.82));
+  border-radius: var(--radius-lg);
 }
-.game-group:last-child {
-  border-right: none;
-}
-.side.red .game-group {
-  border-right: none;
-  border-left: 1px solid rgb(255 255 255 / 0.12);
-}
-.side.red .game-group:first-child {
-  border-left: none;
+
+.game-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .game-label {
   font-weight: 800;
-  font-size: calc(var(--fear-icon, 36px) * 0.38);
+  font-size: calc(var(--fear-icon, var(--fear-icon-auto, 34px)) * 0.5);
   letter-spacing: 0.5px;
-  color: color-mix(in oklab, var(--broadcast-accent) 60%, #ffffff);
+  color: var(--fear-label, var(--text-secondary));
 }
 
 .icons {
@@ -149,8 +134,8 @@ const iconSize = computed(() => (maxGroups.value <= 3 ? 36 : 30))
 
 .fear-icon {
   position: relative;
-  width: var(--fear-icon, 36px);
-  height: var(--fear-icon, 36px);
+  width: var(--fear-icon, var(--fear-icon-auto, 34px));
+  height: var(--fear-icon, var(--fear-icon-auto, 34px));
   border-radius: 3px;
   overflow: hidden;
 }
@@ -188,18 +173,6 @@ const iconSize = computed(() => (maxGroups.value <= 3 ? 36 : 30))
 .fear-icon.red .strike::after {
   background: var(--red-team-color);
   opacity: 0.7;
-}
-
-.center-divider {
-  width: 2px;
-  align-self: stretch;
-  margin: 8px 4px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    color-mix(in oklab, var(--broadcast-accent) 75%, transparent),
-    transparent
-  );
 }
 
 /* mid-draft additions (a new game's bans arriving); the initial scene

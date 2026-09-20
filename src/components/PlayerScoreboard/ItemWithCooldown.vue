@@ -1,17 +1,23 @@
 <script setup lang="ts">
+/**
+ * One inventory tile — a replica of LeagueBroadcast's own `/ingame/v2`
+ * `.item-slot`. Geometry, colours and the cooldown sweep were read off that
+ * overlay's live DOM, so the numbers here are its numbers.
+ *
+ * The tile is always painted, empty or not: v2 renders all eight slots so the
+ * inventory keeps a fixed footprint and items do not shuffle as they are bought.
+ */
 import { useClient } from '@/client'
 import { computed } from 'vue'
 import { getItemCooldownFraction } from '@bluebottle_gg/league-broadcast-client'
 import type { itemWithAsset } from '@bluebottle_gg/league-broadcast-client'
-import FadeTransition from '../../transitions/FadeTransition.vue'
 import { handleImageError, handleImageLoad } from '@/utils/imageUtils'
 import { useGameClock } from '@/composables/useGameClock'
-
-defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
     item?: itemWithAsset
+    /** Set on the trinket only: shows the player's vision score on the tile. */
     visionScore?: number
     showStacks?: boolean
   }>(),
@@ -23,32 +29,7 @@ const props = withDefaults(
 const client = useClient()
 const gameTime = useGameClock()
 
-function getItemIcon(item: itemWithAsset): string {
-  return client.getCacheUrl(item.assetUrl)
-}
-
-function getItemText(item: itemWithAsset): string {
-  if (item.count === 1 && item.charges === 0) {
-    return ''
-  }
-
-  if (item.charges && item.charges > 0) {
-    if (item.charges >= 1000) {
-      return (item.charges / 1000).toFixed(1) + 'k'
-    }
-    return Math.floor(item.charges).toString()
-  }
-
-  if (item.count === 1) {
-    return ''
-  }
-
-  if (item.count >= 1000) {
-    return (item.count / 1000).toFixed(1) + 'k'
-  }
-
-  return item.count.toString()
-}
+const isEmpty = computed(() => !props.item || props.item.id === 0)
 
 /**
  * Degrees of the sweep already elapsed, or `null` while the item is ready.
@@ -62,169 +43,123 @@ const elapsedDegrees = computed(() => {
   return fraction >= 1 ? null : Math.round(360 * fraction)
 })
 
-function getVisionScore() {
-  if (props.visionScore === undefined) {
-    return 0
+/**
+ * The tile's corner badge. v2 draws three mutually exclusive kinds, in this
+ * order, and nothing at all for a plain single item.
+ */
+const badge = computed<{ kind: 'vision' | 'stacks' | 'count'; text: string } | undefined>(() => {
+  if (!props.showStacks) return undefined
+
+  if (props.visionScore !== undefined) {
+    return { kind: 'vision', text: Math.round(props.visionScore).toString() }
   }
 
-  return Math.round(props.visionScore)
-}
+  const item = props.item
+  if (!item) return undefined
 
-function getStacks() {
-  const stacks = props.item?.stacks ?? 0
-  if (stacks > 1000 || stacks < 0) {
-    return 0
+  // Charges (trinket uses, Control Wards) read as a stack count on the tile.
+  if (item.charges && item.charges > 0) {
+    return { kind: 'stacks', text: format(item.charges) }
   }
 
-  return stacks
+  const stacks = item.stacks ?? 0
+  if (stacks > 0 && stacks < 1000) {
+    return { kind: 'stacks', text: Math.floor(stacks).toString() }
+  }
+
+  if (item.count > 1) {
+    return { kind: 'count', text: format(item.count) }
+  }
+
+  return undefined
+})
+
+function format(value: number): string {
+  if (value >= 1000) return (value / 1000).toFixed(1) + 'k'
+  return Math.floor(value).toString()
 }
 </script>
 
 <template>
-  <div class="item-slot">
-    <div v-if="!item || item.id === 0" class="item-slot-empty" v-bind="$attrs"></div>
-
-    <div v-else class="item-slot-content" v-bind="$attrs">
+  <div class="item-slot" :style="{ '--cooldown': (elapsedDegrees ?? 0) + 'deg' }">
+    <template v-if="!isEmpty && item">
       <img
-        class="absolute w-full h-full left-0 top-0"
         v-if="item.modifierUrl"
+        class="item-image item-modifier"
         :src="client.getCacheUrl(item.modifierUrl)"
         @error="handleImageError"
         @load="handleImageLoad"
       />
       <img
-        class="w-full h-full"
-        :src="getItemIcon(item)"
+        class="item-image"
+        :src="client.getCacheUrl(item.assetUrl)"
         @error="handleImageError"
         @load="handleImageLoad"
       />
 
-      <!-- Cooldown overlay + timer clipped to icon bounds -->
-      <div class="cooldown-clip" v-if="elapsedDegrees !== null">
-        <div
-          class="cooldown"
-          :style="{
-            background: `conic-gradient(from 0deg, transparent ${elapsedDegrees}deg, rgba(0,0,0,0.6) ${elapsedDegrees}deg)`,
-          }"
-        ></div>
-        <div class="cooldown-timer">
-          <div class="cooldown-timer-line"></div>
-          <!-- Same angle as the conic-gradient sweep above: both start at 12 o'clock
-               and advance clockwise, so the hand sits on the fill's leading edge. -->
-          <div
-            class="cooldown-timer-hand"
-            :style="{ transform: `rotate(${elapsedDegrees}deg)` }"
-          ></div>
-        </div>
-      </div>
-
-      <span v-if="showStacks && visionScore === undefined" class="item-count">{{
-        getItemText(item)
+      <span v-if="badge" class="item-value" :class="'item-value-' + badge.kind">{{
+        badge.text
       }}</span>
 
-      <!-- VisionScore -->
-      <FadeTransition>
-        <span class="vision-score" v-if="showStacks && visionScore !== undefined">{{
-          getVisionScore()
-        }}</span>
-      </FadeTransition>
-
-      <!-- Trinket Usages -->
-      <FadeTransition>
-        <span
-          class="vision-stacks"
-          v-if="showStacks && visionScore !== undefined && getStacks() === 1"
-          >{{ getStacks() }}
-        </span>
-      </FadeTransition>
-    </div>
+      <!-- Radial depletion only: v2 draws no clock hand over the icon. -->
+      <span v-if="elapsedDegrees !== null" class="item-cooldown" />
+    </template>
   </div>
 </template>
 
 <style scoped>
+/* Measurements taken from the live /ingame/v2 DOM. v2 expresses these in rem
+   against a 16px root; they are written out in px here so the tile cannot be
+   resized by a stray root font-size in an OBS source. */
 .item-slot {
-  display: flex;
-}
-
-.item-slot-empty {
-  background-color: var(--surface-soft);
-}
-
-.item-slot-content {
   position: relative;
-  display: inline-block;
-  line-height: 0;
-  font-weight: 800;
-}
-
-.item-slot-content .cooldown-clip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  width: 30.4px;
+  height: 30.4px;
+  flex: 0 0 auto;
+  border: 1px solid var(--lb-border-subtle);
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
+  background: var(--lb-surface-raised);
   overflow: hidden;
 }
 
-.item-slot-content img {
+.item-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
   display: block;
 }
 
-.item-slot-content span {
-  /* Add a subtle text shadow for better visibility */
-  text-shadow: 0 0 2px rgba(0, 0, 0, 1);
+/* Ornn upgrades and similar paint their plate under the item art. */
+.item-modifier {
+  z-index: 1;
 }
 
-.item-slot-content .item-count {
+.item-value {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  text-align: end;
-  transform: translate(0px, 3px);
-}
-
-.item-slot-content .vision-score {
-  position: absolute;
-  top: 0;
-  left: 0;
+  right: 1px;
+  bottom: 1px;
+  z-index: 3;
+  font-family: var(--lb-font-global);
+  font-size: 11.52px;
+  line-height: 1;
+  font-weight: 700;
   text-align: center;
-  transform: translate(0px, -2px);
-  width: 100%;
+  color: var(--lb-text-secondary);
+  /* Eight-way 1px outline plus a soft bloom — v2's treatment, so the digits
+     survive over a bright item icon. */
+  text-shadow: var(--lb-text-outline);
 }
 
-.item-slot-content .vision-stacks {
+.item-cooldown {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  text-align: end;
-  transform: translate(0px, 0px);
-  width: 100%;
-}
-
-.item-slot-content .cooldown {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.item-slot-content .cooldown-timer-line {
-  position: absolute;
-  top: calc(50% - 70.7%);
-  left: calc(50% - 0.5px);
-  width: 1px;
-  height: 70.7%;
-  background-color: white;
-}
-
-.item-slot-content .cooldown-timer-hand {
-  position: absolute;
-  top: calc(50% - 70.7%);
-  left: calc(50% - 0.5px);
-  width: 1px;
-  height: 70.7%;
-  transform-origin: 50% 100%;
-  background-color: white;
+  inset: 0;
+  z-index: 2;
+  /* --cooldown is the sweep already elapsed, so the scrim is what remains.
+     The 0deg stop is clamped up to --cooldown by the gradient itself. */
+  background: conic-gradient(transparent var(--cooldown), var(--lb-surface-strong) 0deg);
 }
 </style>

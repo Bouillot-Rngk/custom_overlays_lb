@@ -13,6 +13,7 @@ import CenterPanel from './CenterPanel.vue'
 import FearlessBanBar from './FearlessBanBar.vue'
 import CoachDisplay from './CoachDisplay.vue'
 import EventBrandPlate from './EventBrandPlate.vue'
+import DraftTopBar from './DraftTopBar.vue'
 import { CHAMPION_SELECT_TIMING, milliseconds } from './championSelectTiming'
 import {
   resolveHybridChampionModelStatus,
@@ -37,6 +38,10 @@ const props = withDefaults(
 const variant = computed(() => props.variant ?? (props.enable3d ? '3d' : '2d'))
 const isThreeDimensionalStage = computed(() => variant.value === '3d')
 const isHybrid = computed(() => variant.value === 'hybrid')
+// Broadcast layout: header bar on top, pick columns down the flanks, bans in
+// the centre foot. Scoped to the flat 2D scene — the 3D and hybrid stages own
+// their own composition and still use the original bottom strip.
+const isBroadcastLayout = computed(() => variant.value === '2d')
 
 const isActive = useIsChampSelectActive()
 const data = useChampSelectData()
@@ -372,6 +377,7 @@ watch(isActive, (active) => {
         :class="{
           'champ-select-scene--3d': isThreeDimensionalStage,
           'champ-select-scene--hybrid': isHybrid,
+          'champ-select-scene--broadcast': isBroadcastLayout,
         }"
         :style="sceneTimingStyle"
       >
@@ -390,6 +396,15 @@ watch(isActive, (active) => {
 
         <div v-if="isThreeDimensionalStage" class="scene-blackout" />
 
+        <DraftTopBar
+          v-if="isBroadcastLayout"
+          :blue-team="blueTeam"
+          :red-team="redTeam"
+          :best-of="bestOf"
+          :patch="frozenData.metaData?.patch"
+          :time-remaining="timer.timeRemaining"
+        />
+
         <div class="fearless-wrap">
           <FearlessBanBar :blue-team="blueTeam" :red-team="redTeam" />
         </div>
@@ -397,21 +412,25 @@ watch(isActive, (active) => {
         <div class="bottom-block">
           <div class="ban-strip">
             <div class="ban-cluster">
+              <span v-if="isBroadcastLayout" class="ban-label side-blue">BANS</span>
               <BanRow :bans="blueBans" team="blue" />
-              <CoachDisplay :team="blueTeam" side="blue" />
+              <CoachDisplay v-if="!isBroadcastLayout" :team="blueTeam" side="blue" />
             </div>
             <EventBrandPlate
+              v-if="!isBroadcastLayout"
               :meta-data="frozenData.metaData"
               :event-logo-url="eventLogoUrl"
               :event-name="eventName"
             />
             <div class="ban-cluster">
-              <CoachDisplay :team="redTeam" side="red" />
+              <span v-if="isBroadcastLayout" class="ban-label side-red">BANS</span>
+              <CoachDisplay v-if="!isBroadcastLayout" :team="redTeam" side="red" />
               <BanRow :bans="redBans" team="red" />
             </div>
           </div>
 
           <PhaseTimerBar
+            v-if="!isBroadcastLayout"
             :time-remaining="timer.timeRemaining"
             :phase-duration="timer.phaseDuration"
             :active-side="phaseTimerSide"
@@ -439,6 +458,7 @@ watch(isActive, (active) => {
                 :collapsed="featuredPick.blue !== null"
                 :model-viewport="isHybrid ? `blue-${i}` : undefined"
                 :model-status="hybridModelStatus(`blue-${i}`, slot.champion?.alias)"
+                :vertical="isBroadcastLayout"
                 :class="{ 'edge-left': i === 0 }"
               />
               <Transition name="pick-feature">
@@ -452,6 +472,7 @@ watch(isActive, (active) => {
                   :index="blueFeaturedCard.index"
                   :grow-active="1"
                   :grow-inactive="1"
+                  :vertical="isBroadcastLayout"
                   featured
                 />
               </Transition>
@@ -481,7 +502,12 @@ watch(isActive, (active) => {
               </Transition>
             </div>
 
-            <CenterPanel :blue-team="blueTeam" :red-team="redTeam" :best-of="bestOf" />
+            <CenterPanel
+              v-if="!isBroadcastLayout"
+              :blue-team="blueTeam"
+              :red-team="redTeam"
+              :best-of="bestOf"
+            />
 
             <div class="picks red">
               <PickCard
@@ -496,6 +522,7 @@ watch(isActive, (active) => {
                 :collapsed="featuredPick.red !== null"
                 :model-viewport="isHybrid ? `red-${i}` : undefined"
                 :model-status="hybridModelStatus(`red-${i}`, slot.champion?.alias)"
+                :vertical="isBroadcastLayout"
                 :class="{ 'edge-right': i === (redTeam.slots?.length ?? 0) - 1 }"
               />
               <Transition name="pick-feature">
@@ -509,6 +536,7 @@ watch(isActive, (active) => {
                   :index="redFeaturedCard.index"
                   :grow-active="1"
                   :grow-inactive="1"
+                  :vertical="isBroadcastLayout"
                   featured
                 />
               </Transition>
@@ -977,5 +1005,179 @@ watch(isActive, (active) => {
 .scene-leave-to .bottom-block {
   transform: translateY(60%);
   opacity: 0;
+}
+
+/* === Broadcast layout ====================================================
+   Header across the top, a full-height pick column down each flank, and the
+   ban deck in the centre foot. Written as overrides on the shared markup
+   rather than as a second template, so the scene's data wiring, lock-in
+   flourishes and transition choreography stay in one place.
+
+   Only the flat 2D scene gets this class. The 3D and hybrid stages compose
+   their own frame around a camera move and keep the original bottom strip. */
+.champ-select-scene--broadcast {
+  /* --- Type ---------------------------------------------------------------
+     Ingram Mono is the scene's body face; it inherits into every child
+     component, including the pick cards, ban deck and fearless bar, so only
+     the two exceptions (team tag, draft clock) restate a family.
+
+     font-synthesis is off because all three supplied faces are Regular-only.
+     Without it the browser fakes the 600/700/900 weights those components
+     already declare, and a smeared mono is worse than an even one. The weight
+     declarations are left in place: they still read as intent, and they would
+     start working the day a bold cut is added. Hierarchy here is carried by
+     size, letter-spacing and opacity, which the layout already uses.
+     Scoped to the broadcast variant, like the rest of this block — /pregame-3d
+     and /pregame-hybrid keep Bebas Neue. */
+  font-family: var(--brand-font-body);
+  font-synthesis: none;
+
+  /* --- Geometry measured off public/fs_background.png ---------------------
+     That artwork draws the frame this layout sits in, so these are not taste
+     values — they are the art's own edges. Re-measure if the art is replaced.
+
+       centre frame rules   x 394-395 and 1524-1525, y 229 down
+       stage window (clear) x 396-1523, y 231-863
+       divider rule         y 864-865
+       foot section         y 866-1079
+       banner art           x 395-1524, y 27-206                             */
+  --draft-header-height: 229px;
+  /* Flank width: up to the frame's left rule, so the columns stop against the
+     artwork instead of covering it. The header's outer zones use the same
+     token, so each crest sits centred over its own team's column. */
+  --draft-column-width: 394px;
+  /* Height of the bottom slot in the foot section, which holds the fearless
+     block: 8px padding, two 38px rows, the 4px between them, 8px padding. The
+     ban deck offsets itself by this, so the two stay stacked however that slot
+     is resized.
+     Foot budget (y 866-1079, 214px): 10 margin, 84 bans, 12 gap, 96 fearless,
+     12 margin. The live bans gave up 8px of thumbnail to pay for it — they are
+     five icons on one row with width to spare, while the fearless block is up
+     to four games of two rows and was the thing actually starved. */
+  --draft-foot-height: 96px;
+  /* Breathing room inside the foot section's frame rules. */
+  --draft-foot-inset: 14px;
+  /* Lower edge of the clear stage window, where the divider rule begins. */
+  --draft-stage-bottom: 864px;
+}
+
+/* The block stops being a bottom strip and becomes the whole frame, so the
+   columns and the ban deck can be positioned against it directly. */
+.champ-select-scene--broadcast .bottom-block {
+  top: 0;
+  bottom: 0;
+  height: 1080px;
+}
+
+.champ-select-scene--broadcast .pick-strip {
+  position: absolute;
+  inset: 0;
+  display: block;
+  height: auto;
+  /* The strip's dark backing existed to fill the notches between rounded card
+     tops. Square cards in a flush column leave no notches to fill. */
+  background: none;
+}
+
+.champ-select-scene--broadcast .picks {
+  position: absolute;
+  top: var(--draft-header-height);
+  bottom: 0;
+  width: var(--draft-column-width);
+  height: auto;
+  flex-direction: column;
+}
+
+.champ-select-scene--broadcast .picks.blue {
+  left: 0;
+}
+
+.champ-select-scene--broadcast .picks.red {
+  right: 0;
+}
+
+/* Bans occupy the gap between the columns, hard against the foot of the frame. */
+.champ-select-scene--broadcast .ban-strip {
+  position: absolute;
+  bottom: calc(var(--draft-foot-height) + 24px);
+  left: var(--draft-column-width);
+  right: var(--draft-column-width);
+  padding: 0 var(--draft-foot-inset);
+  align-items: end;
+  /* Two columns, not the strip's three: the sponsor plate that occupied the
+     middle track is hidden here, and with `1fr auto 1fr` the red cluster fell
+     into that empty auto track instead of reaching the right edge. */
+  grid-template-columns: 1fr 1fr;
+}
+
+.champ-select-scene--broadcast .ban-cluster {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin-bottom: 0;
+  /* Larger than the bottom-strip build: this is the only live ban display on
+     screen. Trimmed from 72px to fund the fearless block below it. */
+  --ban-size: 64px;
+}
+
+.champ-select-scene--broadcast .ban-cluster:last-child {
+  align-items: flex-end;
+}
+
+.ban-label {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.ban-label.side-blue {
+  color: var(--blue-team-color);
+}
+
+.ban-label.side-red {
+  color: var(--red-team-color);
+}
+
+/* Fearless bans occupy the bottom slot of the foot section, directly under the
+   ban deck — never the stage window, where they covered the casters.
+   It carries its own dark panel rather than sitting bare on the artwork's light
+   paper: that separates the series history from the live bans above it, and
+   gives the champion icons a ground to read against.
+
+   Sizing is width-bound, not height-bound. Four games — the fearless maximum —
+   of five 38px icons, plus labels, per-game panel padding and the gaps between
+   panels, come to roughly 1064px of the 1104px available. Icons are square, so
+   each extra pixel of height costs 20px of width across that worst case; check
+   it before increasing them. */
+.champ-select-scene--broadcast .fearless-wrap {
+  top: auto;
+  bottom: 12px;
+  left: var(--draft-column-width);
+  right: var(--draft-column-width);
+  width: auto;
+  padding: 0 var(--draft-foot-inset);
+  --fear-icon: 38px;
+  --fear-pad: 8px 12px;
+  --fear-gap: 16px;
+  --fear-surface: rgb(6 6 7 / 0.9);
+}
+
+/* The bottom strip's slide-up entrance would now carry the entire scene off
+   the foot of the frame. The cards' own stagger covers the build-in instead. */
+.champ-select-scene--broadcast.scene-enter-from .bottom-block {
+  transform: none;
+}
+
+/* Header drops in ahead of the cards. */
+.champ-select-scene--broadcast.scene-enter-from .draft-top-bar {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.champ-select-scene--broadcast.scene-enter-active .draft-top-bar {
+  transition:
+    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.4s ease;
 }
 </style>

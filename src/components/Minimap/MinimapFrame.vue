@@ -28,8 +28,8 @@ const isInGame = useIsInGame()
   background: linear-gradient(
     var(--accent-angle) in oklab,
     var(--broadcast-accent) 0%,
-    rgba(0, 0, 0, 1) var(--accent-reach),
-    rgba(0, 0, 0, 1) calc(100% - var(--accent-reach)),
+    var(--ink-800) var(--accent-reach),
+    var(--ink-800) calc(100% - var(--accent-reach)),
     var(--broadcast-accent) 100%
   );
   /* different periods so the two motions drift in and out of phase */
@@ -45,7 +45,7 @@ const isInGame = useIsInGame()
      *   layer 2 — white rectangle inset by --border-width (subtract the center)
      * mask-composite: exclude = layer1 XOR layer2 → only the ring remains.
      */
-  --border-width: 10px;
+  --border-width: 6px;
   mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
   mask-size:
     100% 100%,
@@ -60,7 +60,7 @@ const isInGame = useIsInGame()
   -webkit-mask-position: center, center;
   -webkit-mask-repeat: no-repeat, no-repeat;
   -webkit-mask-composite: xor;
-  border: 2px solid rgba(0, 0, 0, 1);
+  border: var(--brand-border-width) solid var(--ink-950);
 }
 
 /*
@@ -89,11 +89,11 @@ const isInGame = useIsInGame()
 @keyframes accent-breathe {
   0%,
   100% {
-    --accent-reach: 45%;
+    --accent-reach: 46%;
   }
 
   50% {
-    --accent-reach: 34%;
+    --accent-reach: 38%;
   }
 }
 

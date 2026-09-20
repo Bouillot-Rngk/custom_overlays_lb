@@ -1,45 +1,57 @@
 <script setup lang="ts">
+/**
+ * Series score beside each team crest — a replica of `/ingame/v2`'s
+ * `.booleanIndicator`: one bar per game needed to win the series, stacked.
+ */
 import { computed } from 'vue'
 import { BestOfType } from '@bluebottle_gg/league-broadcast-client'
 
 const props = defineProps<{
   bestOf: BestOfType
   wins: number
-  fillColor: string
   mirror?: boolean
 }>()
 
-// number of boxes = games needed to win the series (majority), not games played
-const boxCount = computed(() => Math.max(1, Math.ceil(Number(props.bestOf) / 2)))
+/** Bars = games needed to win the series (majority), not games played. */
+const barCount = computed(() => Math.max(1, Math.ceil(Number(props.bestOf) / 2)))
 </script>
 
 <template>
-  <div class="flex gap-1" :class="mirror ? 'flex-row-reverse' : 'flex-row'">
-    <div id="color-display" class="flex w-2 border border-white/55 rounded-xs p-px">
-      <div
-        class="grow"
-        :style="{
-          backgroundColor: fillColor,
-        }"
-      ></div>
-    </div>
-
-    <div id="scores" class="w-2 flex flex-col gap-1.5" v-if="bestOf !== BestOfType.BestOf1">
-      <div
-        class="flex flex-1 w-full grow border border-white/55 rounded-xs p-px"
-        v-for="i in boxCount"
-        :key="i"
-      >
-        <div
-          class="grow"
-          :style="{
-            backgroundColor: i <= wins ? fillColor : 'transparent',
-          }"
-        ></div>
-      </div>
-    </div>
-    <div v-else class="w-2"></div>
+  <div v-if="bestOf !== BestOfType.BestOf1" class="boolean-indicator">
+    <span
+      v-for="i in barCount"
+      :key="i"
+      class="indicator-bar"
+      :class="i <= wins ? 'won' : 'pending'"
+    />
   </div>
 </template>
 
-<style lang="css" scoped></style>
+<style scoped>
+.boolean-indicator {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  height: 100%;
+}
+
+.indicator-bar {
+  width: 16px;
+  flex: 1 1 0;
+}
+
+/* Flipped relative to v2. The operator's style set paints WON games neutral
+   grey and games still to play in the team colour, which reads backwards; with
+   every figure on the bar now white the series is also one of the few places
+   the side colour still speaks, so a win is the filled, coloured state. */
+.indicator-bar.won {
+  background: var(--indicator-color);
+}
+
+.indicator-bar.pending {
+  background: rgb(255 255 255 / 0.16);
+}
+</style>

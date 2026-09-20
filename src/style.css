@@ -1,23 +1,72 @@
 @import 'tailwindcss';
 
-/* --- Corner-radius scale -------------------------------------------------
-   One radius language for the whole overlay so floating cards, chips and
-   inner tiles never mix "rounded" with "hard-edged" identities.
+/* --- Draft typefaces -----------------------------------------------------
+   Three faces the user supplied in src/fonts for the champion-select scene:
+   Le Murmure for team tags, Coconat for the draft clock, Ingram Mono for
+   everything else. All three ship Regular only (bar Coconat's BoldExt), which
+   is why the scene turns font synthesis off — see .champ-select-scene--broadcast.
 
-   Choose by element size / nesting depth (nested tiles step one rung down
-   from their parent so corners stay visually concentric):
-     lg  (8px)  primary floating panels & cards      (scoreboard, power play…)
-     md  (6px)  icon tiles inset in an lg card, mid standalone chips
-     sm  (4px)  list rows, badges, small chips
-     xs  (2px)  deeply-nested inner fills / progress bars
-     pill       fully-rounded bars & tags
-   Circles keep 50% / rounded-full. Panels flush to the screen edge (gold
-   graph, minimap, L-frame) stay square on their edge-touching corners. */
+   font-display: block rather than swap: this is a broadcast source, and a
+   flash of Bebas Neue before the real face lands would go out on air. */
+@font-face {
+  font-family: 'Le Murmure';
+  src:
+    url('./fonts/Le murmure/fonts/webfonts/LeMurmure-Regular.woff2') format('woff2'),
+    url('./fonts/Le murmure/fonts/webfonts/LeMurmure-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Coconat';
+  src:
+    url('./fonts/Coconat/web/Coconat-Regular.woff2') format('woff2'),
+    url('./fonts/Coconat/web/Coconat-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+/* The extended bold cut, wired up so `font-weight: 700` on a Coconat element
+   picks a real face instead of nothing. Unused by default. */
+@font-face {
+  font-family: 'Coconat';
+  src:
+    url('./fonts/Coconat/web/Coconat-BoldExt.woff2') format('woff2'),
+    url('./fonts/Coconat/web/Coconat-BoldExt.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+/* Ships as .otf only — no web cut in the folder the user provided. */
+@font-face {
+  font-family: 'Ingram Mono';
+  src: url('./fonts/Ingram-Mono-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+/* --- Corner-radius scale -------------------------------------------------
+   The overlay is rectilinear: hard 90-degree corners, near-zero radius. Shape
+   is carried by alignment and hairline rules, not by rounding. The rungs are
+   kept (rather than deleted) so components keep expressing intent — swapping
+   these four values is how you'd soften the whole overlay again.
+
+     lg  (2px)  primary floating panels & cards      (scoreboard, power play...)
+     md  (0px)  icon tiles inset in an lg card, mid standalone chips
+     sm  (0px)  list rows, badges, small chips
+     xs  (0px)  deeply-nested inner fills / progress bars
+     pill       fully-rounded bars & tags (post-game only)
+   Circles keep 50% / rounded-full. Panels flush to the screen edge (minimap,
+   L-frame) stay square on their edge-touching corners. */
 :root {
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 2px;
   --radius-pill: 999px;
 }
 
@@ -26,24 +75,121 @@
    Declared on * (not :root) so they pierce into scoped-style components
    the same way the previous App.vue block did. */
 * {
-  --blue-team-color: oklch(0.6231 0.188 259.81);
-  --red-team-color: oklch(0.6231 0.188 28.31);
+  /* --- Neutral ramp ------------------------------------------------------
+     The overlay's chrome is built entirely from these. Black and grey carry
+     the identity; saturated color is reserved for game state, and even then
+     only at the edges. Keep new surfaces on this ramp rather than inventing
+     one-off greys, or the panels stop reading as one system. */
+  --ink-950: #060607;
+  --ink-900: #0c0c0e;
+  --ink-850: #131316;
+  --ink-800: #1a1a1e;
+  --ink-700: #26262c;
+
+  /* Hairline rules. `strong` outlines a panel against the game feed, `soft`
+     divides rows inside one panel, `faint` separates cells within a row. */
+  --line-strong: rgb(255 255 255 / 0.3);
+  --line-soft: rgb(255 255 255 / 0.13);
+  --line-faint: rgb(255 255 255 / 0.07);
+
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+
+  /* --- Team identity -----------------------------------------------------
+     Team colors no longer fill panels. They survive as a hard edge down the
+     outer flank of each side's chrome, plus the team logo — enough to read
+     blue-vs-red at a glance without breaking the monochrome frame. */
+  --blue-team-color: #b692c4;
+  --red-team-color: #f23732;
+  --team-edge-width: 3px;
+
+  /* Objective buffs keep their own hues: they are rare, short-lived states
+     that must not be confused with team color. */
   --baron-color: oklch(0.581767 0.275459 301.0491);
   --elder-color: oklch(0.8741 0.1329 177.69);
   --baron-color-subtle: oklch(0.581767 0.275459 301.0491 / 0.3);
   --elder-color-subtle: oklch(0.8741 0.1329 177.69 / 0.3);
-  /* Project accent. Team colors remain reserved for game state. */
-  --broadcast-accent: #8175ff;
-  --border-color: color-mix(in oklab, var(--broadcast-accent) 72%, transparent);
-  /* Whole-pixel coverage survives browser capture and stream resampling more
-     reliably than the previous 1px/1.5px brand outlines. */
-  --brand-border-width: 2px;
+
+  /* Project accent — now a neutral highlight rather than the old purple, so
+     every border and glow built on it desaturates with one change here. */
+  --broadcast-accent: #d4d4d8;
+  --border-color: var(--line-strong);
+  /* Hairline weight. The design reads modern at 1px; it is a whole pixel at
+     the overlay's native 1920x1080, so it survives browser capture intact.
+     Only scale this if the source is ever rendered below native resolution. */
+  --brand-border-width: 1px;
   /* Two-level surface system for every translucent panel scrim, so
      "more/less transparent" feedback is a one-line change:
-       strong — primary panel surfaces (scoreboards, power play, …)
-       soft   — secondary rows, nested tiles, small chips */
-  --surface-strong: rgb(0 0 0 / 0.65);
-  --surface-soft: rgb(0 0 0 / 0.35);
+       strong — primary panel surfaces (scoreboards, power play, ...)
+       soft   — secondary rows, nested tiles, small chips
+     Both sit near-opaque: the black is the design, not a tint over the game. */
+  --surface-strong: rgb(6 6 7 / 0.93);
+  --surface-soft: rgb(6 6 7 / 0.76);
+
+  /* --- Brand type --------------------------------------------------------
+     The three faces supplied in src/fonts, and the roles they play wherever
+     they appear. Named for the job rather than the scene: they started on the
+     champion-select scene and now carry the scoreboard too.
+
+       tag      the display face — team tags, and only team tags
+       feature  the one hero number in a scene (draft clock, game clock)
+       body     everything else
+
+     Swapping a face across the overlay is a change here, not in each
+     component. */
+  --brand-font-tag: 'Le Murmure', serif;
+  --brand-font-feature: 'Coconat', serif;
+  --brand-font-body: 'Ingram Mono', ui-monospace, monospace;
+}
+
+/* --- LeagueBroadcast /ingame/v2 palette ----------------------------------
+   The in-game components (side champion tabs, bottom scoreboard, spawn
+   timers) are deliberate replicas of LeagueBroadcast own /ingame/v2
+   overlay, so they carry that overlay surface ramp rather than the brand
+   ramp above. Every value was read off its live DOM, not eyeballed.
+
+   Kept as one block on purpose: pulling the replicas onto the UP & DOWN
+   ramp later is an edit here, not an edit in six components. */
+* {
+  --lb-surface-strong: #0a0a0cf7; /* panel ground: board, spawn-timer shell */
+  --lb-surface-base: #141416f0; /* row and cell fill */
+  --lb-surface-raised: #262628f0; /* item tiles, portrait cell, timer icon */
+  --lb-surface-glass: #141416db; /* scoreboard objective band, top of gradient */
+  --lb-surface-scrim: #08080ab8; /* scoreboard objective band, foot of gradient */
+  --lb-surface-opaque: #0a0a0c; /* flat panel ink, for text on a light fill */
+  --lb-border-strong: #ececf047; /* panel outline */
+  --lb-border-subtle: #ececf024; /* tile outline, portrait inner ring */
+  --lb-text-primary: #f7f7fa;
+  --lb-text-secondary: #ceced8;
+  --lb-highlight: #f1ff51; /* shutdown bounty */
+  --lb-negative: #ff5064; /* respawn clock */
+  --lb-neutral: #a3a3ad; /* gold lead below the neutral threshold */
+  --lb-radius-tile: 2px;
+  --lb-radius-chip: 4px; /* spawn timer inner corner */
+  --lb-radius-panel: 6px;
+  --lb-portrait-dead: grayscale(1) brightness(0.46);
+
+  /* v2 splits its type: a display face for labels and badges, a separate
+     numeric stack for clocks. Roc Grotesk is installed on this machine, so
+     the replica resolves the same face v2 does; Roboto Condensed is not, so
+     both v2 and this overlay land on Segoe UI. Declaring the identical stack
+     is what keeps the two in step. */
+  /* v2 keeps two families apart, and so does this: --lb-font-global is its
+     `--lb-global-font` (labels, badges, stats), --lb-font-display its
+     `--lb-font-display` (the scoreboard team tag). Naming them after v2's
+     own tokens keeps a side-by-side diff honest. */
+  --lb-font-global: 'Roc Grotesk ExtraBold', sans-serif;
+  --lb-font-display: 'Noto Sans', 'Segoe UI', sans-serif;
+  --lb-font-numeric: 'Roboto Condensed', Roboto, 'Segoe UI', sans-serif;
+
+  /* Eight-way 1px outline plus a soft bloom. Overlay text sits on live game
+     footage, so every small label needs its own contrast. */
+  --lb-text-outline:
+    rgb(0 0 0 / 0.92) 1px 1px 0, rgb(0 0 0 / 0.92) -1px 1px 0, rgb(0 0 0 / 0.92) 1px -1px 0,
+    rgb(0 0 0 / 0.92) -1px -1px 0, rgb(0 0 0 / 0.92) 1px 0 0, rgb(0 0 0 / 0.92) -1px 0 0,
+    rgb(0 0 0 / 0.92) 0 1px 0, rgb(0 0 0 / 0.92) 0 -1px 0, rgb(0 0 0 / 0.85) 0 0 4px;
+  --lb-text-bloom: rgb(0 0 0 / 0.95) 0 0 2px, rgb(0 0 0 / 0.85) 0 0 4px, rgb(0 0 0 / 0.7) 0 0 7px;
 }
 
 /* Transparent background for OBS browser-source overlays */

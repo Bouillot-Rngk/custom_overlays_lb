@@ -44,7 +44,7 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-row justify-between items-center pl-2.5 pr-10 py-0.5 w-full h-full">
-    <img :src="projectLogo" class="h-7 w-7 object-contain" alt="BlueBottle" />
+    <img :src="projectLogo" class="brand-mark h-6 w-6 object-contain" alt="BlueBottle" />
     <div class="info-text-slot">
       <FadeTransition mode="out-in">
         <span :key="currentInfoIndex" class="patch-text">{{ currentInfo }}</span>
@@ -54,6 +54,11 @@ onUnmounted(() => {
 </template>
 
 <style lang="css" scoped>
+.brand-mark {
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.75;
+}
+
 .info-text-slot {
   display: grid;
   justify-items: end;
@@ -63,11 +68,11 @@ onUnmounted(() => {
 
 .patch-text {
   grid-area: 1 / 1;
-  color: white;
-  font-size: 20px;
+  color: var(--text-secondary);
+  font-size: 18px;
   line-height: 1;
-  font-weight: 800;
-  font-weight: bold;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 </style>
