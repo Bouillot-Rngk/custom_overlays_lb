@@ -14,13 +14,65 @@
  * sized empty box so a tournament/season mark can be dropped in without
  * moving anything either side of it.
  */
-import { computed } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
+import {
+  ObjectiveEventType,
+  type ingameObjectiveEvent,
+} from '@bluebottle_gg/league-broadcast-client'
+import {
+  GameState,
+  type ingameScoreboardBottomPlayerData,
+} from '@bluebottle_gg/league-broadcast-client'
 import { useIngameSelector } from '@/composables/useIngame'
+import { useClient } from '@/client'
+import CentreLogo from '@/assets/VERTICALE_WHITE.png'
 import TeamRow from './TeamRow.vue'
 import TeamObjectiveRow from './TeamObjectiveRow.vue'
+import RoleQuestRow from './RoleQuestRow.vue'
 import DragonBuffBanner from './DragonBuffBanner.vue'
 
+const client = useClient()
 const scoreboard = useIngameSelector((s) => s.gameData.scoreboard)
+
+/*
+ * Role quests are drawn in THIS scoreboard, so they live and die with it — not
+ * with the bottom row. The catch is that the quest item only exists on the
+ * bottom-scoreboard record, and the operator can hide that independently, at
+ * which point the backend stops sending it.
+ *
+ * So the last non-empty roster is held rather than read straight through.
+ * Hiding the bottom row leaves these badges showing their last known state
+ * instead of blanking them. Quest progress only ever moves forward, so a held
+ * value can lag, never contradict.
+ */
+const bottom = useIngameSelector((s) => s.gameData.scoreboardBottom)
+const isMocking = useIngameSelector((s) => (s.gameState as number) === GameState.Mocking)
+
+const heldPlayers = ref<[ingameScoreboardBottomPlayerData[], ingameScoreboardBottomPlayerData[]]>([
+  [],
+  [],
+])
+
+watch(
+  bottom,
+  (next) => {
+    const blue = next?.teams[0]?.players ?? []
+    const red = next?.teams[1]?.players ?? []
+    if (blue.length || red.length) heldPlayers.value = [blue, red]
+  },
+  { immediate: true },
+)
+
+// A new game must not inherit the last one's quest state.
+watch(
+  () => scoreboard.value?.gameTime ?? 0,
+  (now, before) => {
+    if (before !== undefined && now < before - 30) heldPlayers.value = [[], []]
+  },
+)
+
+const bluePlayers = computed(() => heldPlayers.value[0])
+const redPlayers = computed(() => heldPlayers.value[1])
 
 const blue = computed(() => scoreboard.value?.teams[0])
 const red = computed(() => scoreboard.value?.teams[1])
@@ -31,6 +83,49 @@ const gameTime = computed(() => {
   const seconds = Math.floor(scoreboard.value.gameTime % 60)
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 })
+
+/**
+ * Nashor kills per side.
+ *
+ * The scoreboard payload carries towers, plates, grubs and dragons but NOT a
+ * baron count, so this is tallied from objective kill events instead. That has
+ * one consequence worth knowing: the tally only covers events seen since this
+ * overlay connected, so reloading the browser source mid-game restarts it at
+ * zero. Everything else on the bar is a snapshot and survives a reload.
+ *
+ * Field shapes are matched loosely because the feed is not strict about them:
+ * the objective name may be `BARON` or a `SRU_Baron`-style id, the event type
+ * may be the string `Kill` or the enum's 1, and the team may be 0/1 or 100/200.
+ */
+const baronKills = ref<[number, number]>([0, 0])
+
+function isBaronKill(event: ingameObjectiveEvent): boolean {
+  const objective = String(event.objective ?? '').toUpperCase()
+  if (!objective.includes('BARON') && !objective.includes('NASHOR')) return false
+  const type = String(event.eventType ?? '').toUpperCase()
+  return type === 'KILL' || type === String(ObjectiveEventType.Kill)
+}
+
+const unsubscribe = client.onIngameEvents({
+  onObjectiveEvent(event: ingameObjectiveEvent) {
+    if (!isBaronKill(event)) return
+    const side = event.team === 1 || event.team === 200 ? 1 : 0
+    const next: [number, number] = [...baronKills.value]
+    next[side] += 1
+    baronKills.value = next
+  },
+})
+
+// A game restart rewinds the clock; the tally has to rewind with it or the new
+// game inherits the last one's barons.
+watch(
+  () => scoreboard.value?.gameTime ?? 0,
+  (now, before) => {
+    if (before !== undefined && now < before - 30) baronKills.value = [0, 0]
+  },
+)
+
+onUnmounted(unsubscribe)
 </script>
 
 <template>
@@ -43,26 +138,40 @@ const gameTime = computed(() => {
             :team="blue"
             :best-of="scoreboard.bestOf"
             :enemy-team-gold="red.gold"
+            :barons="baronKills[0]"
           />
-          <!-- v2's tournament-icon slot; empty until a mark is configured. -->
-          <div class="tournament-icon" />
+          <!-- Brand mark between the two kill counts. -->
+          <div class="centre-mark">
+            <img :src="CentreLogo" alt="" />
+          </div>
           <TeamRow
             class="team-block team-block-right"
             :team="red"
             :best-of="scoreboard.bestOf"
             :enemy-team-gold="blue.gold"
             mirror
+            :barons="baronKills[1]"
           />
         </div>
       </div>
 
-      <div class="row-clip">
-        <div class="bottom-content">
-          <TeamObjectiveRow :team="blue" />
-          <div class="game-timer">
-            <p class="game-timer-text">{{ gameTime }}</p>
+      <div class="row-clip row-clip-wide">
+        <div class="bottom-row">
+          <div class="quest-slot">
+            <RoleQuestRow :players="bluePlayers" :is-mocking="isMocking" />
           </div>
-          <TeamObjectiveRow :team="red" mirror />
+
+          <div class="bottom-content">
+            <TeamObjectiveRow :team="blue" />
+            <div class="game-timer">
+              <p class="game-timer-text">{{ gameTime }}</p>
+            </div>
+            <TeamObjectiveRow :team="red" mirror />
+          </div>
+
+          <div class="quest-slot mirror">
+            <RoleQuestRow :players="redPlayers" :is-mocking="isMocking" mirror />
+          </div>
         </div>
       </div>
 
@@ -150,8 +259,8 @@ const gameTime = computed(() => {
    when one side's name or gold figure runs longer. */
 .top-content {
   display: grid;
-  grid-template-columns: 1fr 64px 1fr;
-  grid-template-rows: 64px;
+  grid-template-columns: 1fr 52px 1fr;
+  grid-template-rows: 58px;
   align-items: start;
 }
 
@@ -165,19 +274,76 @@ const gameTime = computed(() => {
   justify-self: start;
 }
 
-.tournament-icon {
+.centre-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100%;
   background: var(--lb-surface-base);
   border-radius: var(--lb-radius-tile);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.44);
+  /* Clips the artwork's transparent surround, not the mark — see below. */
+  overflow: hidden;
+}
+
+/*
+ * VERTICALE_WHITE.png is a 1921x1081 export whose visible mark is only
+ * 308x546, sitting in transparent padding: the mark is ~50.5% of the file's
+ * height. Sizing the file to the band would therefore render the mark at half
+ * the height asked for, so the image is oversized to ~170% and the empty
+ * surround is clipped by the parent. Nothing visible is cropped — the mark is
+ * 28px wide at this size, well inside the 52px slot.
+ *
+ * The 170% is that one file's padding ratio, not a layout constant: a logo
+ * exported tight to its bounds wants `height: calc(100% - 8px)` and no clip.
+ */
+.centre-mark img {
+  height: 170%;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/* The column centres its children, which shrink-wraps them. The bottom row has
+   to span the whole scoreboard instead, or its side slots have no width to push
+   the quest badges out into. */
+.row-clip-wide {
+  align-self: stretch;
+}
+
+/* Quest badges at the two outer edges, objective band dead centre. The side
+   slots take equal flexible width and the band none, so the clock stays on the
+   frame's midline even when one side has finished its quests and the other
+   has not. */
+.bottom-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+}
+
+.quest-slot {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-start;
+  padding-left: 4px;
+}
+
+.quest-slot.mirror {
+  justify-content: flex-end;
+  padding-left: 0;
+  padding-right: 4px;
 }
 
 .bottom-content {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  height: 32px;
+  height: 27px;
   /* v2 grades this band darker than the team blocks above it, so it reads as
      a subtitle to the bar rather than a second panel of equal weight. */
   background: linear-gradient(180deg, var(--lb-surface-glass) 0%, var(--lb-surface-scrim) 100%);
@@ -190,7 +356,7 @@ const gameTime = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 96px;
+  width: 78px;
   height: 100%;
 }
 
@@ -199,7 +365,7 @@ const gameTime = computed(() => {
 .game-timer-text {
   margin: 0;
   font-family: var(--brand-font-feature);
-  font-size: 27px;
+  font-size: 21px;
   line-height: normal;
   font-weight: 400;
   color: var(--sb-text);

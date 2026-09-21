@@ -7,6 +7,7 @@ import ItemBuyNotification from './ItemBuyNotification.vue'
 import { useClient } from '@/client'
 import { onUnmounted } from 'vue'
 import { useNotificationQueue } from '@/composables/useNotificationQueue'
+import SlideTransition from '@/transitions/SlideTransition.vue'
 
 const scoreboard = useIngameSelector((s) => s.gameData.scoreboardBottom)
 const tabs = useIngameSelector((s) => s.gameData.tabs)
@@ -71,8 +72,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Transition name="slide-down">
-    <div id="player-scoreboard" v-if="scoreboard && tabs">
+  <!-- The shared slide, not a hand-rolled `<Transition name="slide-down">`.
+       SlideTransition's style block is GLOBAL and matches any name containing
+       "slide-", so a local rule of equal specificity loses to it on order: the
+       board was entering from above (that rule's `0, -100%` default) however
+       the local CSS was written. Declaring the direction through the component
+       is the only way to control it. -->
+  <SlideTransition enter-from="down" leave-to="down" :duration="420">
+    <!-- `tabs` is passed through where a row wants it but is NOT required:
+         requiring it meant hiding the champion tabs also blanked this row. -->
+    <div id="player-scoreboard" v-if="scoreboard">
       <div v-for="i in 5" :key="i" class="scoreboard-row">
         <PlayerInfo
           :scoreboard-player="scoreboard?.teams[0]?.players[i - 1]"
@@ -114,7 +123,7 @@ onUnmounted(() => {
         />
       </div>
     </div>
-  </Transition>
+  </SlideTransition>
 </template>
 
 <style lang="css" scoped>
@@ -124,6 +133,11 @@ onUnmounted(() => {
    be resized by a browser window that is not exactly the canvas size.
    Placement (bottom-centre) lives in views/overlay-layout.css. */
 #player-scoreboard {
+  /* Brand mono throughout, synthesis off — see PlayerTab for the reasoning.
+     Inherited by every row component below. */
+  font-family: var(--brand-font-body);
+  font-synthesis: none;
+
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -151,15 +165,5 @@ onUnmounted(() => {
    sized to the pre-v2 grid. The mirrored side pins itself to the right. */
 .scoreboard-row .item-buy-plate {
   width: calc((100% - 51.19px) / 2);
-}
-
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: transform 0.5s ease;
-}
-
-.slide-down-enter-from,
-.slide-down-leave-to {
-  transform: translateY(100%);
 }
 </style>

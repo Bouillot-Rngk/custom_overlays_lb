@@ -1,16 +1,15 @@
 <script setup lang="ts">
 /**
- * One team's half of the scoreboard's objective band — a replica of
- * `/ingame/v2`'s `bottomContent-leftTeam` / `-rightTeam`:
+ * One team's half of the band under the scoreboard: that side's dragons, and
+ * nothing else.
  *
- *   [ dragons | plates | grubs ]  (game clock)  [ grubs | plates | dragons ]
+ *   [ dragons ]  (game clock)  [ dragons ]
  *
- * Counts sit outboard of their own icon on each side, so both halves read
- * outward from the clock.
+ * Horde and Nashor moved up onto the bar itself and tower plates came off the
+ * overlay entirely, so this band carries only what the reference frame keeps
+ * below the scoreboard.
  */
 import { type ingameScoreboardTeamData } from '@bluebottle_gg/league-broadcast-client'
-import Grubs from '@/assets/grubs.png'
-import TowerPlate from '@/assets/towerPlate.png'
 import Fire from '@/assets/dragon/fire.png'
 import Air from '@/assets/dragon/air.png'
 import Chemtech from '@/assets/dragon/chemtech.png'
@@ -46,24 +45,6 @@ const dragons = computed(() =>
 <template>
   <div class="objective-row" :class="{ mirror }">
     <img
-      class="objective-icon"
-      :src="Grubs"
-      alt=""
-      @error="handleImageError"
-      @load="handleImageLoad"
-    />
-    <p class="objective-text">{{ team.grubs }}</p>
-
-    <img
-      class="objective-icon plate-icon"
-      :src="TowerPlate"
-      alt=""
-      @error="handleImageError"
-      @load="handleImageLoad"
-    />
-    <p class="objective-text">{{ team.towerPlates }}</p>
-
-    <img
       v-for="(icon, i) in dragons"
       :key="i"
       class="objective-icon dragon-icon"
@@ -84,8 +65,8 @@ const dragons = computed(() =>
   align-items: center;
   gap: 4px;
   padding: 4px;
-  height: 32px;
-  margin-right: 16px;
+  height: 27px;
+  margin-right: 10px;
   /* Both halves take the same width, so the clock stays on the band's midline
      however many dragons one side has taken. */
   width: 100%;
@@ -94,11 +75,10 @@ const dragons = computed(() =>
 .objective-row.mirror {
   flex-direction: row;
   margin-right: 0;
-  margin-left: 16px;
+  margin-left: 10px;
 }
 
-/* Height-driven so each mark keeps its own aspect ratio — the plate art is
-   noticeably taller than it is wide. */
+/* Height-driven so each dragon keeps its own aspect ratio. */
 .objective-icon {
   width: auto;
   height: 100%;

@@ -81,7 +81,7 @@ watch(
 </script>
 
 <template>
-  <div class="team-block" :class="{ mirror }" :style="{ '--indicator-color': teamColor }">
+  <div class="team-block" :class="{ mirror }" :style="{ '--side-color': teamColor }">
     <div class="team-score">
       <p class="score-kills">{{ team.kills }}</p>
 
@@ -165,23 +165,29 @@ watch(
   flex-direction: row-reverse;
   justify-content: flex-end;
   align-items: center;
-  width: fit-content;
+  /* max-content, not fit-content: inside a 1fr track fit-content resolves
+     against the track's own (still unresolved) size during intrinsic sizing,
+     so the track came out ~24px short and the score row spilled over the tag
+     and the centre mark. max-content contributes the real width instead. */
+  width: max-content;
   height: 100%;
   background: var(--lb-surface-base);
   border: 1px solid var(--lb-border-subtle);
   /* Team colour down the outer flank only. With every figure now white this
      edge, the series bars and the advantage chip are the whole of the side
      cue, which is the overlay's standing rule for team colour. */
-  border-left: var(--team-edge-width) solid var(--indicator-color);
+  border-left: var(--team-edge-width) solid var(--side-color);
   border-radius: var(--lb-radius-tile);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.44);
+  /* So the crest's colour block takes the corner radius at the outer edge. */
+  overflow: hidden;
 }
 
 .team-block.mirror {
   flex-direction: row;
   justify-content: flex-start;
   border-left: 1px solid var(--lb-border-subtle);
-  border-right: var(--team-edge-width) solid var(--indicator-color);
+  border-right: var(--team-edge-width) solid var(--side-color);
 }
 
 .team-info {
@@ -196,31 +202,52 @@ watch(
   flex-direction: row-reverse;
 }
 
+/* The crest sits on the side colour — the strip from the block's outer edge in
+   to the series bars, and no further. `height: 100%` rather than v2's 64px:
+   the band is 58px tall now, so a fixed 64 overhung it top and bottom, which
+   went unnoticed while this cell was transparent. */
 .team-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 64px;
-  height: 64px;
-  padding: 8px;
+  height: 100%;
+  /* 4px, not 8: the supplied crests are 512x512 with their own margin already
+     drawn in, so a generous inset here just shrinks the mark twice over. The
+     cell is height-bound, so every pixel of padding costs a pixel of logo. */
+  padding: 4px;
   flex: 0 0 auto;
+  background: var(--side-color);
 }
 
+/* contain, never cover. The cell is wider than it is tall, so `cover` scaled a
+   square crest to the width and cropped the top and bottom off it — which is
+   what was clipping the blue side's mark. `contain` fits the whole logo and
+   letterboxes the difference, and it keeps non-square wordmarks intact too. */
 .team-icon img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
+/* The tag belongs to the score group, not to the crest: it sits hard against
+   the stats (12px, counting the score row's own padding) with a wider 24px
+   channel back to the series bars. Sized to content rather than to a fixed
+   track — a fixed one left a ~95px void here, since Le Murmure sets a
+   three-letter tag in barely 23px. */
 .team-infos {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  /* Le Murmure is condensed, so it still needs more than v2's 112 even at the
-     smaller size the reference bar uses. */
-  width: 124px;
+  align-items: flex-end;
+  padding: 0 2px 0 24px;
+  min-width: 52px;
   height: 100%;
+}
+
+.team-block.mirror .team-infos {
+  align-items: flex-start;
+  padding: 0 24px 0 2px;
 }
 
 .team-name {
@@ -241,8 +268,16 @@ watch(
   justify-content: space-around;
   align-items: center;
   height: 100%;
-  padding: 0 14px;
-  gap: 4px;
+  /* Asymmetric on purpose: less on the tag side so the two groups close up,
+     more on the centre side so the kill count keeps clear of the swords mark.
+     With the track's own 6px this leaves the same 18px between the tag and the
+     first mark as between every other pair. */
+  padding: 0 18px 0 10px;
+  gap: 18px;
+}
+
+.team-block.mirror .team-score {
+  padding: 0 10px 0 18px;
 }
 
 .team-block.mirror .team-score {
@@ -282,32 +317,29 @@ watch(
   margin: 0 12px;
 }
 
+/* Mark then figure, the same way round on both sides. The reference bar does
+   NOT mirror these pairs — only their order along the bar is mirrored — so the
+   gold coin sits outboard on blue and inboard on red, and both read left to
+   right. */
 .gold-line {
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-}
-
-.team-block.mirror .gold-line {
-  flex-direction: row;
+  gap: 6px;
 }
 
 .score-tower {
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  /* Fixed, and told not to shrink: as a plain `width` the flex row collapses
-     it to its content and the tower column stops lining up between teams. */
-  flex: 0 0 46px;
+  gap: 6px;
+  /* Sized to content: the figures already hold their own width in `ch`, so the
+     row's gap is what sets the rhythm. A fixed cell width would swallow part of
+     that gap into the cell's own centring instead. */
+  flex: 0 0 auto;
   height: 100%;
-}
-
-.team-block.mirror .score-tower {
-  flex-direction: row;
 }
 
 /* Marks are sized by height so each keeps its own aspect ratio. */
@@ -341,20 +373,23 @@ watch(
   min-width: 2ch;
 }
 
-/* Horde and Nashor read the same way as the tower cell: mark inboard of its
-   count, both sides mirrored off the centre. */
+/* Horde and Nashor read the same way as the tower cell. */
 .score-stat {
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
   gap: 6px;
-  flex: 0 0 44px;
+  flex: 0 0 auto;
   height: 100%;
 }
 
-.team-block.mirror .score-stat {
-  flex-direction: row;
+/* The two objective marks are full-colour art next to what are otherwise plain
+   white glyphs — Nashor especially reads as a purple blob at 19px. Flattened
+   so the five cells read as one set, which is how the reference bar treats
+   them. */
+.score-stat .stat-icon {
+  filter: grayscale(1) brightness(1.45);
 }
 
 /* Padded off the icon side so the advantage centres under the number rather
@@ -365,11 +400,9 @@ watch(
   justify-content: center;
   width: 100%;
   height: 15px;
-  padding: 0 24px 0 8px;
-}
-
-.team-block.mirror .gold-advantage {
-  padding: 0 8px 0 24px;
+  /* The figure is the right-hand half of the pair on both sides, so the chip
+     is padded off the mark rather than mirrored. */
+  padding: 0 4px 0 22px;
 }
 
 .gold-advantage-text {

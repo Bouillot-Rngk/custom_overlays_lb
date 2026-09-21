@@ -68,7 +68,9 @@ const sortedInventory = computed(() =>
   justify-content: flex-end;
   align-items: center;
   gap: 2.304px;
-  padding: 0 6.4px;
+  /* 4px rather than v2's 6.4: the stats track next door needs the width for a
+     monospaced KDA, and this is the only slack in the row. */
+  padding: 0 4px;
   height: 100%;
   min-width: 0;
 }

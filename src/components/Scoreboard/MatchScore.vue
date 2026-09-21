@@ -48,7 +48,7 @@ const barCount = computed(() => Math.max(1, Math.ceil(Number(props.bestOf) / 2))
    every figure on the bar now white the series is also one of the few places
    the side colour still speaks, so a win is the filled, coloured state. */
 .indicator-bar.won {
-  background: var(--indicator-color);
+  background: var(--side-color);
 }
 
 .indicator-bar.pending {

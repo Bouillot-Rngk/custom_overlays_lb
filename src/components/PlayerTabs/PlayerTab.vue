@@ -41,7 +41,15 @@ const {
   resourceColor,
 } = usePlayerVitals(toRef(props, 'scoreboardPlayer'), toRef(props, 'tabPlayer'))
 
-const championIcon = computed(() => client.getCacheUrl(props.scoreboardPlayer?.champion?.squareImg))
+// The tab record carries its own champion art and level, so the tile still
+// draws when the bottom row is switched off.
+const championIcon = computed(() =>
+  client.getCacheUrl(
+    props.scoreboardPlayer?.champion?.squareImg ?? props.tabPlayer?.championAssets?.squareImg,
+  ),
+)
+
+const level = computed(() => props.scoreboardPlayer?.level ?? props.tabPlayer?.level)
 
 /** Keystone: the first perk the backend sends for this player. */
 const keystone = computed(() => {
@@ -90,7 +98,7 @@ const stacks = computed(() => {
 
       <img v-if="championIcon" class="portrait" :src="championIcon" alt="" />
 
-      <span class="level">{{ scoreboardPlayer?.level }}</span>
+      <span class="level">{{ level }}</span>
       <span v-if="stacks !== undefined" class="stacks">{{ stacks }}</span>
 
       <!-- Overhangs the tile's outer edge by 6px, as it does in v2. -->
@@ -131,6 +139,12 @@ const stacks = computed(() => {
    readable here. Hairline radii and text outlines are deliberately NOT scaled:
    they are rendering detail, and a 1.2px outline only reads as blur. */
 .champion-tab-shell {
+  /* The brand's mono face, like the rest of the overlay. It ships Regular
+     only, so synthesis is off: the weights declared below would otherwise be
+     faked, and a smeared mono reads worse than an even one. */
+  font-family: var(--brand-font-body);
+  font-synthesis: none;
+
   --s: var(--tab-scale, 1);
 
   --tab-size: calc(72px * var(--s));

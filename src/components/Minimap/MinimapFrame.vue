@@ -13,106 +13,58 @@ const isInGame = useIsInGame()
 
 <style scoped>
 /*
- * Single element — diagonal broadcast-accent gradient,
- * masked so only the border ring is visible and the center is fully transparent.
- * Safe for OBS browser-source overlays with no chroma key required.
+ * Bezel around the game's own minimap.
+ *
+ * A single element whose centre is punched out by a mask, so only the ring
+ * paints and the map underneath stays fully visible — no chroma key needed for
+ * an OBS browser source.
+ *
+ * Sizing lives in views/overlay-layout.css and is measured off the real HUD,
+ * not guessed; see the note there before changing it.
  */
 .minimap-frame {
   pointer-events: none;
 
-  /*
-     * The colour fill: brand accent fading through black at the diagonal.
-     * --accent-reach (registered below) sets where the accent hands over to
-     * black; animating it makes the two corner fills slowly swell and recede.
-     */
-  background: linear-gradient(
-    var(--accent-angle) in oklab,
-    var(--broadcast-accent) 0%,
-    var(--ink-800) var(--accent-reach),
-    var(--ink-800) calc(100% - var(--accent-reach)),
-    var(--broadcast-accent) 100%
-  );
-  /* different periods so the two motions drift in and out of phase */
-  animation:
-    accent-breathe 20s ease-in-out infinite,
-    accent-drift 33s ease-in-out infinite;
+  /* Flat near-black, matching the bezel on the reference broadcast. This used
+     to be an animated two-corner accent gradient left over from the old purple
+     theme; the overlay's direction is black and grey with no coloured glow, and
+     the reference frames the map with a plain dark band. */
+  background: var(--lb-surface-strong);
+
+  /* Rounded outside, square inside — the mask's hole is rectangular, so only
+     the outer corners take the radius, which is what the reference shows. */
+  border-radius: var(--lb-radius-panel);
+
+  /* Hairline on the outer edge only: an inset shadow follows the border box,
+     and the mask has already removed everything inboard of the ring. */
+  box-shadow: inset 0 0 0 1px var(--lb-border-subtle);
 
   /*
-     * Mask: opaque around the edges, fully transparent in the center.
-     * The inner rectangle is defined as a % inset — adjust to taste.
-     * Two mask layers combined with 'exclude' punch the hole:
-     *   layer 1 — full white rectangle (show everything)
-     *   layer 2 — white rectangle inset by --border-width (subtract the center)
-     * mask-composite: exclude = layer1 XOR layer2 → only the ring remains.
-     */
-  --border-width: 6px;
+   * Two mask layers combined with 'exclude' punch the hole:
+   *   layer 1 — full-size rectangle (show everything)
+   *   layer 2 — rectangle inset by --ring-width (subtract the centre)
+   * exclude = layer1 XOR layer2, so only the ring survives.
+   *
+   * The HUD's own bezel is not symmetric — it runs 28px on the left and 30px
+   * at the top (the gold corner ornament lives there) but only 20px right and
+   * 18px bottom. 16px is therefore the widest ring that still clears the map
+   * itself on every side, while hiding the ornament the way the reference
+   * broadcast does.
+   */
+  --ring-width: 16px;
   mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
   mask-size:
     100% 100%,
-    calc(100% - var(--border-width) * 2) calc(100% - var(--border-width) * 2);
+    calc(100% - var(--ring-width) * 2) calc(100% - var(--ring-width) * 2);
   mask-position: center, center;
   mask-repeat: no-repeat, no-repeat;
   mask-composite: exclude;
   -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
   -webkit-mask-size:
     100% 100%,
-    calc(100% - var(--border-width) * 2) calc(100% - var(--border-width) * 2);
+    calc(100% - var(--ring-width) * 2) calc(100% - var(--ring-width) * 2);
   -webkit-mask-position: center, center;
   -webkit-mask-repeat: no-repeat, no-repeat;
   -webkit-mask-composite: xor;
-  border: var(--brand-border-width) solid var(--ink-950);
-}
-
-/*
- * Registered so the gradient stop interpolates smoothly (plain custom
- * properties snap between keyframes instead of animating).
- * 45% matches the previous static gradient — that is the resting state.
- */
-@property --accent-reach {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: 45%;
-}
-
-/* Gradient direction — animating it slides the bright spots along the edges */
-@property --accent-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 45deg;
-}
-
-/*
- * Slow breathing of the corner colours: the accent pulls back along the
- * diagonal, then swells out to its resting reach again. Kin to the power play
- * sheen, but it animates the frame's own fill instead of layering a band on top.
- */
-@keyframes accent-breathe {
-  0%,
-  100% {
-    --accent-reach: 46%;
-  }
-
-  50% {
-    --accent-reach: 38%;
-  }
-}
-
-/*
- * Slow wander of the highlight point: tilting the gradient slides the two
- * bright corners back and forth along the frame edges.
- */
-@keyframes accent-drift {
-  0%,
-  100% {
-    --accent-angle: 45deg;
-  }
-
-  30% {
-    --accent-angle: 64deg;
-  }
-
-  70% {
-    --accent-angle: 26deg;
-  }
 }
 </style>

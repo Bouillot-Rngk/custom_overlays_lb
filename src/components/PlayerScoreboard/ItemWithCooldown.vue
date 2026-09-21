@@ -143,7 +143,7 @@ function format(value: number): string {
   right: 1px;
   bottom: 1px;
   z-index: 3;
-  font-family: var(--lb-font-global);
+  font-family: var(--brand-font-body);
   font-size: 11.52px;
   line-height: 1;
   font-weight: 700;

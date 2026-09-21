@@ -67,7 +67,7 @@ const leadColor = computed(() => {
 }
 
 .gold-value {
-  font-family: var(--lb-font-global);
+  font-family: var(--brand-font-body);
   font-size: 13.12px;
   line-height: 1;
   font-weight: 800;

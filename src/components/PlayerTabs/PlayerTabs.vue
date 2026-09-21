@@ -1,8 +1,13 @@
 <script setup lang="ts">
 /**
  * A team's column of five player tabs, pinned to its side of the screen.
- * Gated on being in game like every other live element, and fed from the same
- * scoreboard/tabs records the bottom row uses.
+ *
+ * Gated on the `tabs` record alone. The operator can hide the tabs and the
+ * bottom row independently, and hiding one makes the backend stop sending that
+ * record — so gating this column on `scoreboardBottom` (as it used to) meant
+ * switching the bottom row off took the tabs down with it. The bottom row's
+ * record is still read where it has something the tabs want, but it is never
+ * required.
  */
 import { computed } from 'vue'
 import { Team } from '@bluebottle_gg/league-broadcast-client'
@@ -31,7 +36,7 @@ const tabPlayers = computed(() => tabs.value?.[tabsKey.value]?.players ?? [])
   <FadeTransition>
     <!-- The v2 tile carries no team accent of its own — side is read from the
          column's screen edge — so no team colour is passed down. -->
-    <div v-if="isInGame && players.length" class="player-tabs" :class="{ mirror }">
+    <div v-if="isInGame && tabPlayers.length" class="player-tabs" :class="{ mirror }">
       <PlayerTab
         v-for="i in 5"
         :key="i"

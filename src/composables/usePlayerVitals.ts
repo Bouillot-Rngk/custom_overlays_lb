@@ -2,8 +2,7 @@ import { computed, type Ref } from 'vue'
 import {
   ResourceType,
   SpellSlotIndex,
-  getRespawnRemaining,
-  isPlayerDead,
+  getRemaining,
   type ingameScoreboardBottomPlayerData,
   type tabPlayer,
 } from '@bluebottle_gg/league-broadcast-client'
@@ -14,9 +13,14 @@ import { xpProgressPct } from '@/utils/xpProgress'
 /**
  * Per-player derived state shared by the two places a player is drawn: the
  * side tabs (name, level, spells, ultimate, vitals) and the bottom scoreboard
- * row (name, level, items, KDA). Both read the same two backend records, so
- * keeping the derivations here stops the two views drifting apart — a
- * resource-colour or respawn rule fixed in one used to miss the other.
+ * row (name, level, items, KDA). Keeping the derivations here stops the two
+ * views drifting apart — a resource-colour or respawn rule fixed in one used
+ * to miss the other.
+ *
+ * Both records are optional and either alone is enough. The operator can hide
+ * the tabs and the bottom row independently, and when one is switched off the
+ * backend simply stops sending that record — so anything both views show has
+ * to resolve from whichever record is present.
  */
 export function usePlayerVitals(
   scoreboardPlayer: Ref<ingameScoreboardBottomPlayerData | undefined>,
@@ -42,26 +46,29 @@ export function usePlayerVitals(
     return `${value}g`
   })
 
-  const respawnTimeRemaining = computed(() => {
-    const p = scoreboardPlayer.value
-    if (!p) return undefined
-    const remaining = getRespawnRemaining(p, gameTime.value)
-    return remaining > 0 ? Math.ceil(remaining) : undefined
-  })
-
-  const isDead = computed(() => isPlayerDead(scoreboardPlayer.value, gameTime.value))
-
-  const ultimate = computed(() =>
-    scoreboardPlayer.value ? tabPlayer.value?.abilities[SpellSlotIndex.R] : undefined,
+  // Both records carry respawnAt, so the death state survives either one being
+  // switched off on its own.
+  const respawnRemaining = computed(() =>
+    getRemaining(scoreboardPlayer.value?.respawnAt ?? tabPlayer.value?.respawnAt, gameTime.value),
   )
+
+  const respawnTimeRemaining = computed(() =>
+    respawnRemaining.value > 0 ? Math.ceil(respawnRemaining.value) : undefined,
+  )
+
+  const isDead = computed(() => respawnRemaining.value > 0)
+
+  const ultimate = computed(() => tabPlayer.value?.abilities[SpellSlotIndex.R])
   const summonerOne = computed(() => tabPlayer.value?.abilities[SpellSlotIndex.D])
   const summonerTwo = computed(() => tabPlayer.value?.abilities[SpellSlotIndex.F])
 
   // Champion alias is the last resort, so a name plate never renders empty for a
   // player the backend gave neither an overlay name nor a Riot ID.
-  const playerName = computed(() =>
-    playerDisplayName(scoreboardPlayer.value, scoreboardPlayer.value?.champion?.alias ?? ''),
-  )
+  const playerName = computed(() => {
+    const alias =
+      scoreboardPlayer.value?.champion?.alias ?? tabPlayer.value?.championAssets?.alias ?? ''
+    return playerDisplayName(scoreboardPlayer.value ?? tabPlayer.value, alias)
+  })
 
   const buffBorderClass = computed(() => {
     const hasBaron = tabPlayer.value?.hasBaron ?? false

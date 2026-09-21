@@ -79,7 +79,12 @@ const { shutdown, respawnTimeRemaining, isDead } = usePlayerVitals(
    out in px so an OBS source cannot resize them via root font-size. */
 .player {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 51.19px 49.59px;
+  /* Stats track widened from v2's 51.19: the brand face is monospaced, so a
+     late-game KDA is far wider than the proportional face v2 sets it in and
+     was being clipped by this block's overflow. 64px clears the worst case
+     ("10/10/20"); the inventory track pays for it, and its own end padding was
+     trimmed to keep all eight slots fitting. */
+  grid-template-columns: minmax(0, 1fr) 64px 49.59px;
   align-items: stretch;
   column-gap: 2px;
   background: var(--lb-surface-base);
@@ -87,7 +92,7 @@ const { shutdown, respawnTimeRemaining, isDead } = usePlayerVitals(
 }
 
 .player.mirror {
-  grid-template-columns: 49.59px 51.19px minmax(0, 1fr);
+  grid-template-columns: 49.59px 64px minmax(0, 1fr);
 }
 
 /* Source order is inventory, stats, portrait; the red side re-orders so the
@@ -117,7 +122,7 @@ const { shutdown, respawnTimeRemaining, isDead } = usePlayerVitals(
 
 /* No gap between the two: v2 stacks them on touching line boxes. */
 .creep-score {
-  font-family: var(--lb-font-global);
+  font-family: var(--brand-font-body);
   font-size: 11.84px;
   line-height: 1;
   font-weight: 700;
@@ -126,8 +131,10 @@ const { shutdown, respawnTimeRemaining, isDead } = usePlayerVitals(
 }
 
 .kda {
-  font-family: var(--lb-font-global);
-  font-size: 16px;
+  font-family: var(--brand-font-body);
+  /* 13px, not v2's 16: at the mono face's 0.61em advance that keeps a
+     seven-character KDA inside the track, and still reads above the CS line. */
+  font-size: 13px;
   line-height: 1;
   font-weight: 500;
   text-align: center;
@@ -178,7 +185,7 @@ const { shutdown, respawnTimeRemaining, isDead } = usePlayerVitals(
   align-items: center;
   justify-content: center;
   padding: 0 2.4px;
-  font-family: var(--lb-font-global);
+  font-family: var(--brand-font-body);
   font-size: 9.6px;
   line-height: 1;
   font-weight: 750;
@@ -192,7 +199,7 @@ const { shutdown, respawnTimeRemaining, isDead } = usePlayerVitals(
   z-index: 3;
   display: grid;
   place-items: center;
-  font-family: var(--lb-font-global);
+  font-family: var(--brand-font-body);
   font-size: 16.8px;
   line-height: 1;
   font-weight: 800;

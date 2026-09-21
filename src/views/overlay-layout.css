@@ -19,7 +19,8 @@
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translateX(-50%);
+  /* Same reasoning as the bottom board: keep `transform` free for animation. */
+  translate: -50%;
 }
 
 #app .overlay-bottom {
@@ -37,7 +38,11 @@
   position: absolute;
   bottom: 0px;
   left: 50%;
-  transform: translateX(-50%);
+  /* `translate`, not `transform`: the board's slide animates `transform`, and
+     a centring transform here would be REPLACED by it — the panel lurched
+     412.8px right (half its width) on the way down. These are separate
+     properties and compose, so the slide keeps the centring. */
+  translate: -50%;
   width: 825.6px;
   height: 250.56px;
 }
@@ -103,12 +108,23 @@
   right: 0;
 }
 
+/* Minimap bezel.
+
+   Measured off a real capture of this operator's client rather than guessed:
+   the HUD minimap's gold frame has its outer edge at x 1617 / y 775 and runs to
+   x 1913 / y 1073, so the widget is ~298px square sitting 6px in from both
+   screen edges. The old 285x280 box was flush to the corner, which put its left
+   and top edges INSIDE the minimap and cropped the frame on two sides.
+
+   This tracks the client's HUD scale. If that setting changes the minimap
+   moves and resizes, and these four numbers have to be re-measured from a
+   fresh screenshot. */
 #app .overlay-minimap {
   position: absolute;
-  bottom: 0px;
-  right: 0px;
-  width: 285px;
-  height: 280px;
+  bottom: 6px;
+  right: 6px;
+  width: 298px;
+  height: 298px;
 }
 
 #app .overlay-lframe {
