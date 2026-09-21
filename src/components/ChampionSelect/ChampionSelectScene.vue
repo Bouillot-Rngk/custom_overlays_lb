@@ -761,8 +761,6 @@ watch(isActive, (active) => {
 .bf-banned {
   font-weight: 800;
   font-size: 15px;
-  letter-spacing: 5px;
-  text-indent: 5px; /* recenter: letter-spacing adds a trailing gap */
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.7);
 }
@@ -776,7 +774,6 @@ watch(isActive, (active) => {
   font-weight: 900;
   font-size: 38px;
   line-height: 1;
-  letter-spacing: 1px;
   text-transform: uppercase;
   color: #ffffff;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
@@ -1026,7 +1023,7 @@ watch(isActive, (active) => {
      already declare, and a smeared mono is worse than an even one. The weight
      declarations are left in place: they still read as intent, and they would
      start working the day a bold cut is added. Hierarchy here is carried by
-     size, letter-spacing and opacity, which the layout already uses.
+     size and opacity, which the layout already uses.
      Scoped to the broadcast variant, like the rest of this block — /pregame-3d
      and /pregame-hybrid keep Bebas Neue. */
   font-family: var(--brand-font-body);
@@ -1127,7 +1124,6 @@ watch(isActive, (active) => {
 .ban-label {
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 

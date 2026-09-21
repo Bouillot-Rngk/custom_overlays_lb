@@ -132,7 +132,6 @@ const hasData = computed(() => columns.value.some((c) => c.groups.length > 0))
 .role-name {
   font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: white;
 }
@@ -152,7 +151,6 @@ const hasData = computed(() => columns.value.some((c) => c.groups.length > 0))
 .game-label {
   font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.1em;
   color: color-mix(in oklab, var(--broadcast-accent) 60%, white);
 }
 
@@ -185,7 +183,6 @@ const hasData = computed(() => columns.value.some((c) => c.groups.length > 0))
 .pg-empty span {
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.4);
 }

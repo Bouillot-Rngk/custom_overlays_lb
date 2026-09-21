@@ -146,7 +146,6 @@ const clock = computed(() => formatGameClock(props.overview.gameTime))
   font-size: 44px;
   font-weight: 900;
   line-height: 0.95;
-  letter-spacing: 0.02em;
   color: white;
   white-space: nowrap;
 }
@@ -154,7 +153,6 @@ const clock = computed(() => formatGameClock(props.overview.gameTime))
 .team-name {
   font-size: 15px;
   font-weight: 500;
-  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.5);
   white-space: nowrap;
@@ -191,7 +189,6 @@ const clock = computed(() => formatGameClock(props.overview.gameTime))
 .result {
   font-size: 14px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
 }
@@ -212,7 +209,6 @@ const clock = computed(() => formatGameClock(props.overview.gameTime))
   font-size: 46px;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0.02em;
   color: white;
   font-variant-numeric: tabular-nums;
 }
@@ -220,7 +216,6 @@ const clock = computed(() => formatGameClock(props.overview.gameTime))
 .clock-label {
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.5);
 }
@@ -238,13 +233,11 @@ const clock = computed(() => formatGameClock(props.overview.gameTime))
 .banner-text {
   font-size: 17px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: white;
 }
 .banner-patch {
   font-weight: 600;
-  letter-spacing: 0.14em;
   color: rgba(255, 255, 255, 0.85);
 }
 .banner-sep {

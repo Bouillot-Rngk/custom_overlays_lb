@@ -228,7 +228,6 @@ defineProps<{
 .item-buy-label {
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--broadcast-accent);
   text-shadow: 0 0 6px color-mix(in oklab, var(--broadcast-accent) 60%, transparent);

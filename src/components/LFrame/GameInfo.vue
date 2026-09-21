@@ -72,7 +72,6 @@ onUnmounted(() => {
   font-size: 18px;
   line-height: 1;
   font-weight: 700;
-  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 </style>

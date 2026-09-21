@@ -153,7 +153,6 @@ const hasData = computed(() => rows.value.length > 0)
   padding: 8px 18px;
   font-size: 15px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: white;
   background: var(--broadcast-accent);
@@ -179,7 +178,6 @@ const hasData = computed(() => rows.value.length > 0)
 .team-name {
   font-size: 26px;
   font-weight: 800;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .team-name.side-blue {
@@ -193,7 +191,6 @@ const hasData = computed(() => rows.value.length > 0)
 .team-bar .vs {
   font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   color: rgb(255 255 255 / 0.35);
 }
 
@@ -273,7 +270,6 @@ const hasData = computed(() => rows.value.length > 0)
 .game-label {
   font-size: 16px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: white;
 }
@@ -286,7 +282,6 @@ const hasData = computed(() => rows.value.length > 0)
 .upcoming {
   font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.5);
 }
@@ -307,7 +302,6 @@ const hasData = computed(() => rows.value.length > 0)
 .pg-empty span {
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.4);
 }

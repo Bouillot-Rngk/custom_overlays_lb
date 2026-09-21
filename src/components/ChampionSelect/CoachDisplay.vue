@@ -89,7 +89,6 @@ watch(lockedCount, (next, prev) => {
 .label {
   font-weight: 800;
   font-size: 11px;
-  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: color-mix(in oklab, var(--broadcast-accent) 60%, #ffffff);
   line-height: 1;
@@ -98,7 +97,6 @@ watch(lockedCount, (next, prev) => {
 .names {
   font-weight: 700;
   font-size: 18px;
-  letter-spacing: 0.5px;
   color: #ffffff;
   line-height: 1;
 }

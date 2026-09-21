@@ -126,7 +126,6 @@ const currentPartnerLogo = computed(() => CHAMPION_SELECT_PARTNER_LOGOS[logoInde
   color: #ffffff;
   font-size: 12px;
   font-weight: 900;
-  letter-spacing: 1.4px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -151,7 +150,6 @@ const currentPartnerLogo = computed(() => CHAMPION_SELECT_PARTNER_LOGOS[logoInde
   font-weight: 800;
   font-size: 16px;
   line-height: 1;
-  letter-spacing: 1.5px;
   text-transform: uppercase;
   white-space: nowrap;
   color: #ffffff;

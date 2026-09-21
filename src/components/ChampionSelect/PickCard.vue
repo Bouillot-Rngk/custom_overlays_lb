@@ -450,7 +450,6 @@ const stats = computed(() => {
 .stat-label {
   font-weight: 700;
   font-size: 11px;
-  letter-spacing: 2px;
   text-transform: uppercase;
   color: color-mix(in oklab, var(--broadcast-accent) 55%, #ffffff);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
@@ -495,7 +494,6 @@ const stats = computed(() => {
      run wider than a condensed display face. Capped at 21px so short names on
      wide active cards don't balloon; floored at 11px so it stays legible. */
   font-size: clamp(11px, calc(130cqw / var(--name-len, 10)), 21px);
-  letter-spacing: 0.5px;
   color: #ffffff;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 }
@@ -536,7 +534,6 @@ const stats = computed(() => {
   bottom: auto;
   padding: 0 16px;
   font-size: clamp(14px, calc(92cqw / var(--name-len, 10)), 27px);
-  letter-spacing: 0.06em;
 }
 
 .pick-card.vertical.team-blue .name {

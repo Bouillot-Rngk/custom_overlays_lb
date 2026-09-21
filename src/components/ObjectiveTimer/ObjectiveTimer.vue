@@ -199,7 +199,6 @@ const objectiveIcon = computed(() => {
   font-size: 16.8px;
   line-height: 1;
   font-weight: 800;
-  letter-spacing: -0.02em;
   text-align: center;
   color: var(--lb-text-primary);
   white-space: nowrap;

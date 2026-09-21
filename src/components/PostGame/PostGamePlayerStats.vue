@@ -88,7 +88,6 @@ const label = (key: string) => key.replace(/_/g, ' ')
   margin: 0 0 8px;
   font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: white;
 }
@@ -113,7 +112,6 @@ const label = (key: string) => key.replace(/_/g, ' ')
 .stat-key {
   font-size: 18px;
   font-weight: 500;
-  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.55);
 }
@@ -136,7 +134,6 @@ const label = (key: string) => key.replace(/_/g, ' ')
 .pg-empty span {
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.4);
 }

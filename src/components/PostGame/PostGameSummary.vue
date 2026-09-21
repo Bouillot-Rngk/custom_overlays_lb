@@ -235,7 +235,6 @@ const leadRed = (row: StatRow) => !row.neutral && row.redRaw > row.blueRaw
   font-size: 15px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.55);
   text-align: center;
   white-space: nowrap;

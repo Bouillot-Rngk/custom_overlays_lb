@@ -141,7 +141,6 @@ const LEGEND = [
   font-size: 17px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
   color: white;
 }
 
@@ -166,7 +165,6 @@ const LEGEND = [
 .legend-label {
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.65);
 }
 

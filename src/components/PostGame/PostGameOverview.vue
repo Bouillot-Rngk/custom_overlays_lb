@@ -109,7 +109,6 @@ const redOverview = computed(() => props.overview?.teamOverviewBySide?.[redSide.
 .pg-empty span {
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.4);
 }

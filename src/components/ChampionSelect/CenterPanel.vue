@@ -213,7 +213,6 @@ function dotFilled(team: championSelectTeam, i: number) {
 .team-name {
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0.5px;
   text-transform: uppercase;
   color: #ffffff;
   /* Short names stay centered over the team icon: the 116px minimum matches
@@ -243,7 +242,6 @@ function dotFilled(team: championSelectTeam, i: number) {
 .team-record {
   font-weight: 700;
   font-size: 13px;
-  letter-spacing: 1px;
   color: rgb(255 255 255 / 0.65);
   line-height: 1;
   /* always centered under the team icon, regardless of how far the name grew */

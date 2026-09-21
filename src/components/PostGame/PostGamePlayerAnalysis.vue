@@ -196,7 +196,6 @@ const items = computed(() =>
   margin: 0 0 22px;
   font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: white;
 }
@@ -229,7 +228,6 @@ const items = computed(() =>
 .tree-label {
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.6);
 }
@@ -344,7 +342,6 @@ const items = computed(() =>
 .item-time {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.04em;
   color: rgb(255 255 255 / 0.55);
   font-variant-numeric: tabular-nums;
 }
@@ -368,7 +365,6 @@ const items = computed(() =>
   color: rgb(255 255 255 / 0.45);
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -382,7 +378,6 @@ const items = computed(() =>
 .pg-empty span {
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.4);
 }

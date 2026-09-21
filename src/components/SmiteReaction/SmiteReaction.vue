@@ -217,7 +217,7 @@ onUnmounted(() => {
             </span>
             <div class="smite-badges flex items-center gap-2 mt-0.5">
               <span
-                class="tracking-wider px-1.5 py-0.5"
+                class="px-1.5 py-0.5"
                 :style="{
                   fontWeight: '800',
                   fontSize: '11px',
@@ -230,7 +230,7 @@ onUnmounted(() => {
                 {{ reactionLabel(animatedReactionTime) }}
               </span>
               <span
-                class="tracking-wider px-1.5 py-0.5"
+                class="px-1.5 py-0.5"
                 :style="{
                   fontWeight: '800',
                   fontSize: '11px',

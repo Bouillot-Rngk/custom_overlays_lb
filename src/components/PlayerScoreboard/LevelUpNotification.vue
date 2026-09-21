@@ -63,7 +63,6 @@ defineProps<{
   font-weight: 800;
   font-size: 10px;
   color: white;
-  letter-spacing: 1px;
 }
 
 .level-up-number {

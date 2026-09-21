@@ -281,7 +281,6 @@ const buffBorderClass = computed(() => {
 .damage-label {
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.65);
 }
 

@@ -90,7 +90,6 @@ const championName = computed(() => props.champion.name || props.champion.alias 
   padding: 4px 12px;
   font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: white;
   border-radius: var(--radius-sm);
@@ -107,7 +106,6 @@ const championName = computed(() => props.champion.name || props.champion.alias 
   font-weight: 800;
   line-height: 0.98;
   text-transform: uppercase;
-  letter-spacing: 0.01em;
   color: white;
   text-shadow: 0 4px 24px rgb(0 0 0 / 0.65);
 }
@@ -116,7 +114,6 @@ const championName = computed(() => props.champion.name || props.champion.alias 
   font-size: 20px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
   color: rgb(255 255 255 / 0.55);
 }
 </style>

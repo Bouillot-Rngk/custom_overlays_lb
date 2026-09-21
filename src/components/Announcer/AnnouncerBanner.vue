@@ -161,13 +161,11 @@ const teamClass = computed(() => {
 .eyebrow {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 4px;
   color: rgba(226, 232, 240, 0.72);
 }
 
 .title {
   font-size: 26px;
-  letter-spacing: 3px;
   color: var(--announcer-accent);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
@@ -178,7 +176,6 @@ const teamClass = computed(() => {
 
 .detail {
   font-size: 17px;
-  letter-spacing: 1.5px;
   color: rgba(226, 232, 240, 0.85);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
@@ -239,7 +236,6 @@ const teamClass = computed(() => {
 .gromp-grand .eyebrow {
   color: #f0d792;
   font-size: 12px;
-  letter-spacing: 6px;
   text-shadow: 0 0 12px rgb(228 193 111 / 0.5);
 }
 
@@ -249,7 +245,6 @@ const teamClass = computed(() => {
   font-size: 32px;
   font-weight: 900;
   line-height: 0.98;
-  letter-spacing: 2.4px;
   text-align: center;
   text-transform: uppercase;
   text-wrap: balance;
@@ -263,7 +258,6 @@ const teamClass = computed(() => {
   font-size: 15px;
   font-style: normal;
   font-weight: 400;
-  letter-spacing: 0.8px;
   text-align: center;
 }
 

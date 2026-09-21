@@ -77,7 +77,6 @@ defineProps<{
   font-size: 40px;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: white;
 }
@@ -85,7 +84,6 @@ defineProps<{
 .frame-subtitle {
   font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.5);
 }

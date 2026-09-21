@@ -295,7 +295,6 @@ function getRoleStyle(index: number) {
   /* project-style accent eyebrow label, lightened for contrast on the splash */
   color: color-mix(in oklab, var(--broadcast-accent) 65%, white);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   margin: 0;
 }
 

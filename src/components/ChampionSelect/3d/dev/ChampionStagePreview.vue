@@ -181,7 +181,6 @@ startPick()
   color: rgb(255 255 255 / 0.55);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 1.5px;
 }
 
 .preview-controls button {
@@ -210,7 +209,6 @@ startPick()
   background: rgb(5 6 10 / 0.82);
   color: rgb(255 255 255 / 0.4);
   font-size: 12px;
-  letter-spacing: 3px;
 }
 
 .draft-guide {
@@ -227,7 +225,6 @@ startPick()
   color: rgb(255 255 255 / 0.3);
   font-size: 14px;
   font-weight: 700;
-  letter-spacing: 2px;
 }
 
 .draft-guide > :last-child {

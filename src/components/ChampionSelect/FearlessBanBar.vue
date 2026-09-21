@@ -123,7 +123,6 @@ const iconSize = computed(() => (gameGroups.value.length <= 4 ? 34 : 28))
 .game-label {
   font-weight: 800;
   font-size: calc(var(--fear-icon, var(--fear-icon-auto, 34px)) * 0.5);
-  letter-spacing: 0.5px;
   color: var(--fear-label, var(--text-secondary));
 }
 

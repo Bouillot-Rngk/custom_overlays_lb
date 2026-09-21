@@ -331,7 +331,6 @@ usePowerPlaySlot(
   line-height: 1;
   height: 12px;
   margin-bottom: 8px;
-  letter-spacing: 3px;
   text-transform: uppercase;
   white-space: nowrap;
   animation: presented-fade-out 0.25s ease 1.3s both;

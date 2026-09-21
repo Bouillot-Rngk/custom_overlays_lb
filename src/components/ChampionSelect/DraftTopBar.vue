@@ -227,7 +227,6 @@ const shortPatch = computed(() => props.patch?.split('.').slice(0, 2).join('.') 
   font-size: 19px;
   line-height: 1;
   font-weight: 600;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
   opacity: 0.85;
   white-space: nowrap;
@@ -245,14 +244,12 @@ const shortPatch = computed(() => props.patch?.split('.').slice(0, 2).join('.') 
   font-size: 72px;
   line-height: 0.96;
   font-weight: 400;
-  letter-spacing: 0.02em;
 }
 
 .side-coach {
   font-size: 17px;
   line-height: 1;
   font-weight: 600;
-  letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0.9;
   white-space: nowrap;
@@ -273,7 +270,6 @@ const shortPatch = computed(() => props.patch?.split('.').slice(0, 2).join('.') 
   font-size: 21px;
   line-height: 1;
   font-weight: 700;
-  letter-spacing: 0.22em;
 }
 
 /* The draft clock is the one number anyone looks for on this bar. Coconat
@@ -292,6 +288,5 @@ const shortPatch = computed(() => props.patch?.split('.').slice(0, 2).join('.') 
   font-size: 17px;
   line-height: 1;
   font-weight: 600;
-  letter-spacing: 0.12em;
 }
 </style>

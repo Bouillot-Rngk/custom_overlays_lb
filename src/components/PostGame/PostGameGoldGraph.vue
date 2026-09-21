@@ -170,7 +170,6 @@ const maxLabel = computed(() => {
   font-size: 17px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
   color: white;
 }
 

@@ -252,14 +252,12 @@ watch(redDragons, onDragonsChanged)
 .drake-title {
   font-size: 19px;
   font-weight: 800;
-  letter-spacing: 2.5px;
   text-transform: uppercase;
 }
 
 .drake-stats {
   font-size: 16px;
   font-weight: 700;
-  letter-spacing: 1.2px;
   color: #f2f5f7;
 }
 </style>

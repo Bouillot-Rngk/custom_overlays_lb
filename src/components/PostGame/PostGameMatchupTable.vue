@@ -171,7 +171,6 @@ const hasData = computed(() => cards.value.length > 0)
 .card-name {
   font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.5);
   white-space: nowrap;
@@ -222,14 +221,12 @@ const hasData = computed(() => cards.value.length > 0)
 .badge-fallback {
   font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.04em;
   color: white;
 }
 
 .team-tag {
   font-size: 28px;
   font-weight: 800;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: white;
 }
@@ -241,7 +238,6 @@ const hasData = computed(() => cards.value.length > 0)
   flex-shrink: 0;
   font-size: 15px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   color: rgb(255 255 255 / 0.35);
 }
 
@@ -280,7 +276,6 @@ const hasData = computed(() => cards.value.length > 0)
   padding: 4px 12px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.55);
   border: 1px solid rgb(255 255 255 / 0.2);
@@ -296,7 +291,6 @@ const hasData = computed(() => cards.value.length > 0)
 .pg-empty span {
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.4);
 }

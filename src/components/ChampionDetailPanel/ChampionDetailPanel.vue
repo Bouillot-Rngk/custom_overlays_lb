@@ -462,7 +462,6 @@ function runeIcon(rune: championRuneStat): string {
    (see fitName) to fit rather than ellipsize; overflow:hidden is only a clip-of-last-resort. */
 .display-name {
   font-size: 16px;
-  letter-spacing: 0.02em;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
@@ -472,7 +471,6 @@ function runeIcon(rune: championRuneStat): string {
 .champion-name {
   font-size: 12px;
   color: #9aa2ad;
-  letter-spacing: 0.03em;
   white-space: nowrap;
   flex-shrink: 0;
 }
